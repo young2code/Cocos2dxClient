@@ -40,11 +40,14 @@ public:
 
 	void ConnectToServer(const char* address, const char* name);
 
+	void Send(const rapidjson::Document& data);
+
 	const char* GetUserName() const { return mUserName.c_str() ; }
 
 	void ShowMsgBox(const char* title, const char* body, ...);
 
 private:
+	// updater. cocos2dx does not provide a global udpate function.
 	class Updater : public cocos2d::CCObject
 	{
 	public:
@@ -55,14 +58,35 @@ private:
 		AppDelegate& mApp;
 	};
 
+	// network
 	void OnSocketConnect();
-	void OnSocketRecv(bool hasParseError, const rapidjson::Document& data);
+	void OnSocketRecv(bool hasParseError, rapidjson::Document& data);
 	void OnSocketClose();
+
+	// fsm
+	void OnEnterLogin(int prevState);
+	void OnUpdateLogin();
+	void OnLeaveLogin(int nextState);
+
+	void OnEnterLobby(int prevState);
+	void OnUpdateLobby();
+	void OnLeaveLobby(int nextState);
+
+	void OnEnterGame(int prevState);
+	void OnUpdateGame();
+	void OnLeaveGame(int nextState);
 
 private:
 	Updater mUpdater;
 	PollingSocket mSocket;
 	std::string mUserName;
+
+	enum State
+	{
+		kStateLogin,
+		kStateLobby,
+		kStateGame,
+	};
 	FSM mFSM;
 };
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "cocos2d.h"
+#include <rapidjson\document.h>
 
 namespace cocos2d
 {
@@ -7,6 +8,7 @@ namespace cocos2d
 	{
 		class CCEditBox;
 	}
+	class CCLabelTTF;
 }
 
 class LobbyScene : public cocos2d::CCScene
@@ -21,10 +23,14 @@ public:
     // a selector callback
     void menuEchoCallback(CCObject* pSender);
 
+	// network
+	void OnRecv(rapidjson::Document& data);
+
     // implement the "static node()" method manually
     CREATE_FUNC(LobbyScene);
 
 private:
-	cocos2d::extension::CCEditBox* mEditEcho;
+	cocos2d::extension::CCEditBox* mEditInput;
+	cocos2d::CCLabelTTF* mLabelOutput;
 };
 

@@ -7,16 +7,23 @@ using namespace cocos2d::extension;
 
 
 LobbyScene::LobbyScene()
-	: mEditEcho(NULL)
+	: mEditInput(NULL)
+	, mLabelOutput(NULL)
 {
 }
 
 LobbyScene::~LobbyScene()
 {
-	if (mEditEcho)
+	if (mEditInput)
 	{
-		mEditEcho->release();
-		mEditEcho = NULL;
+		mEditInput->release();
+		mEditInput = NULL;
+	}
+
+	if (mLabelOutput)
+	{
+		mLabelOutput->release();
+		mLabelOutput = NULL;
 	}
 }
 
@@ -46,26 +53,28 @@ bool LobbyScene::init()
 
 		// Echo
 		CCSize serverSize(size.width / 3, 30);
-		mEditEcho = CCEditBox::create(serverSize, CCScale9Sprite::create("green_edit.png"));
-		mEditEcho->retain();
-		mEditEcho->setPosition(ccp(size.width/2, size.height - 100));
-		mEditEcho->setText("yahoo~");
-		mEditEcho->setPlaceHolder(mEditEcho->getText());
-		mEditEcho->setPlaceholderFont("Arial", 20);
-		mEditEcho->setPlaceholderFontColor(ccBLACK);
-		addChild(mEditEcho);
+		mEditInput = CCEditBox::create(serverSize, CCScale9Sprite::create("green_edit.png"));
+		mEditInput->retain();
+		mEditInput->setPosition(ccp(size.width/2, size.height - 100));
+		mEditInput->setText("yahoo~");
+		mEditInput->setPlaceHolder(mEditInput->getText());
+		mEditInput->setPlaceholderFont("Arial", 20);
+		mEditInput->setPlaceholderFontColor(ccBLACK);
+		addChild(mEditInput);
 
 		// Output
-		CCLabelTTF* output = CCLabelTTF::create("Hello World", "Arial", 20, CCSizeMake(0, 0), kCCTextAlignmentCenter);
+		mLabelOutput = CCLabelTTF::create("...", "Arial", 20, CCSizeMake(0, 0), kCCTextAlignmentCenter);
+		mLabelOutput->retain();
+		mLabelOutput->setColor(ccORANGE);
+		mLabelOutput->setPosition(ccp(size.width/2, size.height - 150));
+		addChild(mLabelOutput);
 
-		addChild(output);
-
-		//// Connect
-	 //   CCLabelTTF* connectLabel = CCLabelTTF::create("Connect", "Arial", 20);
-		//CCMenuItemLabel* connectItem = CCMenuItemLabel::create(connectLabel, this, menu_selector(LobbyScene::menuConnectCallback));
-  //      CCMenu* menu = CCMenu::create(connectItem, NULL);
-  //      menu->setPosition(ccp(size.width/2, size.height/2));
-  //      addChild(menu, 1);
+		// Connect
+	    CCLabelTTF* echoLabel = CCLabelTTF::create("Echo", "Arial", 20);
+		CCMenuItemLabel* connectItem = CCMenuItemLabel::create(echoLabel, this, menu_selector(LobbyScene::menuEchoCallback));
+        CCMenu* menu = CCMenu::create(connectItem, NULL);
+        menu->setPosition(ccp(size.width/2, size.height/2));
+        addChild(menu, 1);
 
 
         bRet = true;
@@ -74,9 +83,29 @@ bool LobbyScene::init()
     return bRet;
 }
 
+
 void LobbyScene::menuEchoCallback(CCObject* pSender)
 {
- //   AppDelegate* app = static_cast<AppDelegate*>(CCApplication::sharedApplication());
-	//app->Send()
+	AppDelegate* app = static_cast<AppDelegate*>(CCApplication::sharedApplication());
+	
+	rapidjson::Document data;
+	data.SetObject();
+	data.AddMember("type", "echo", data.GetAllocator());
+	data.AddMember("msg", mEditInput->getText(), data.GetAllocator());
+
+	app->Send(data);
 }
 
+
+void LobbyScene::OnRecv(rapidjson::Document& data)
+{
+	rapidjson::Value& type = data["type"];
+	if (type.IsString() && 0 == _stricmp(type.GetString(), "echo"))
+	{
+		rapidjson::Value& msg = data["msg"];
+		if (msg.IsString())
+		{
+			mLabelOutput->setString(msg.GetString());
+		}
+	}
+}

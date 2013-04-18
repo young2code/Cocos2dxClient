@@ -9,7 +9,7 @@ class PollingSocket
 {
 public:
 	typedef boost::function<void (void)> OnConnectFunc;
-	typedef boost::function<void (bool, const rapidjson::Document& data)> OnRecvFunc;
+	typedef boost::function<void (bool, rapidjson::Document& data)> OnRecvFunc;
 	typedef boost::function<void (void)> OnCloseFunc;
 
 public:

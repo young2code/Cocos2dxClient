@@ -18,14 +18,22 @@ AppDelegate::AppDelegate()
 {
 	Network::Init();
 
-	PollingSocket::OnConnectFunc onConnect = boost::bind(&AppDelegate::OnSocketConnect, this);
-	PollingSocket::OnRecvFunc onRecv = boost::bind(&AppDelegate::OnSocketRecv, this, _1, _2);
-	PollingSocket::OnCloseFunc onClose = boost::bind(&AppDelegate::OnSocketClose, this);
-	mSocket.Init(onConnect, onRecv, onClose);
+	mFSM.RegisterState(kStateLogin, boost::bind(&AppDelegate::OnEnterLogin, this, _1),
+									boost::bind(&AppDelegate::OnUpdateLogin, this),
+									boost::bind(&AppDelegate::OnLeaveLogin, this, _1));
+
+	mFSM.RegisterState(kStateLobby, boost::bind(&AppDelegate::OnEnterLobby, this, _1),
+									boost::bind(&AppDelegate::OnUpdateLobby, this),
+									boost::bind(&AppDelegate::OnLeaveLobby, this, _1));
+
+	mFSM.RegisterState(kStateGame, boost::bind(&AppDelegate::OnEnterGame, this, _1),
+								   boost::bind(&AppDelegate::OnUpdateGame, this),
+								   boost::bind(&AppDelegate::OnLeaveGame, this, _1));
 }
 
 AppDelegate::~AppDelegate()
 {
+	mFSM.Reset(false);
 	mSocket.Shutdown(false);
 	Network::Shutdown();
 }
@@ -46,9 +54,9 @@ bool AppDelegate::applicationDidFinishLaunching()
     CCScheduler* defaultScheduler = CCDirector::sharedDirector()->getScheduler();
 	defaultScheduler->scheduleSelector(schedule_selector(AppDelegate::Updater::update), &mUpdater, 0, false);
 
-    // create a scene. it's an autorelease object
-    // run
-    pDirector->runWithScene(LoginScene::create());
+	// Start Login screen
+	mFSM.SetState(kStateLogin);
+
     return true;
 }
 
@@ -82,15 +90,41 @@ void AppDelegate::ConnectToServer(const char* address, const char* name)
 void AppDelegate::OnSocketConnect()
 {
 	LOG("AppDelegate::OnSocketConnect()");
-	CCDirector::sharedDirector()->replaceScene(LobbyScene::create());
+	mFSM.SetState(kStateLobby);
 }
 
-void AppDelegate::OnSocketRecv(bool hasParseError, const rapidjson::Document& data)
+
+void AppDelegate::OnSocketRecv(bool hasParseError, rapidjson::Document& data)
 {
 	if (hasParseError)
 	{
 		LOG("AppDelegate::OnSocketRecv() - parsing json failed.");
 		ShowMsgBox("Error", "JSON parsing failed.");
+		return;
+	}
+
+	CCDirector* director = CCDirector::sharedDirector();
+	switch (mFSM.GetState())
+	{
+	case kStateLogin:
+		break;
+
+	case kStateLobby:
+		{
+			LobbyScene* lobby = static_cast<LobbyScene*>(director->getRunningScene());
+			lobby->OnRecv(data);
+		}
+		break;
+
+	case kStateGame:
+		{
+			//GameScene* game = static_cast<GameScene*>(director->getRunningScene());
+			//game->OnRecv(data);
+		}
+		break;
+
+	default:
+		assert(0);
 		return;
 	}
 }
@@ -100,14 +134,11 @@ void AppDelegate::OnSocketClose()
 	LOG("AppDelegate::OnSocketClose()");
 	ShowMsgBox("Error", "Connection closed.");
 
-	// Recreate socket.
-	PollingSocket::OnConnectFunc onConnect = boost::bind(&AppDelegate::OnSocketConnect, this);
-	PollingSocket::OnRecvFunc onRecv = boost::bind(&AppDelegate::OnSocketRecv, this, _1, _2);
-	PollingSocket::OnCloseFunc onClose = boost::bind(&AppDelegate::OnSocketClose, this);
-	mSocket.Init(onConnect, onRecv, onClose);
+}
 
-	// go back to login scene
-	CCDirector::sharedDirector()->replaceScene(LoginScene::create());
+void AppDelegate::Send(const rapidjson::Document& data)
+{
+	mSocket.AsyncSend(data);
 }
 
 void AppDelegate::ShowMsgBox(const char* title, const char* body, ...)
@@ -120,3 +151,30 @@ void AppDelegate::ShowMsgBox(const char* title, const char* body, ...)
 
 	MessageBoxA(NULL, buffer, title, MB_ICONWARNING | MB_OK | MB_DEFBUTTON1);
 }
+
+// Login
+void AppDelegate::OnEnterLogin(int prevState)
+{
+	PollingSocket::OnConnectFunc onConnect = boost::bind(&AppDelegate::OnSocketConnect, this);
+	PollingSocket::OnRecvFunc onRecv = boost::bind(&AppDelegate::OnSocketRecv, this, _1, _2);
+	PollingSocket::OnCloseFunc onClose = boost::bind(&AppDelegate::OnSocketClose, this);
+	mSocket.Init(onConnect, onRecv, onClose);
+
+    CCDirector::sharedDirector()->runWithScene(LoginScene::create());
+}
+void AppDelegate::OnUpdateLogin(){}
+void AppDelegate::OnLeaveLogin(int nextState){}
+
+// Lobby
+void AppDelegate::OnEnterLobby(int prevState)
+{
+	CCDirector::sharedDirector()->replaceScene(LobbyScene::create());
+}
+void AppDelegate::OnUpdateLobby(){}
+void AppDelegate::OnLeaveLobby(int nextState){}
+
+
+// Game
+void AppDelegate::OnEnterGame(int prevState){}
+void AppDelegate::OnUpdateGame(){}
+void AppDelegate::OnLeaveGame(int nextState){}
