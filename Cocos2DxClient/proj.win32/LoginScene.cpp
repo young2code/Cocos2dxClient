@@ -5,30 +5,9 @@
 using namespace cocos2d;
 using namespace cocos2d::extension;
 
-CCScene* LoginScene::scene()
-{
-    CCScene * scene = NULL;
-    do 
-    {
-        // 'scene' is an autorelease object
-        scene = CCScene::create();
-        CC_BREAK_IF(! scene);
-
-        // 'layer' is an autorelease object
-        LoginScene *layer = LoginScene::create();
-        CC_BREAK_IF(! layer);
-
-        // add layer as a child to scene
-        scene->addChild(layer);
-    } while (0);
-
-    // return the scene
-    return scene;
-}
-
-
 LoginScene::LoginScene()
 	: mEditServer(NULL)
+	, mEditUserName(NULL)
 {
 }
 
@@ -38,6 +17,12 @@ LoginScene::~LoginScene()
 	{
 		mEditServer->release();
 		mEditServer = NULL;
+	}
+
+	if (mEditUserName)
+	{
+		mEditUserName->release();
+		mEditUserName = NULL;
 	}
 }
 
@@ -52,7 +37,7 @@ bool LoginScene::init()
         // super init first
         //////////////////////////////////////////////////////////////////////////
 
-        CC_BREAK_IF(! CCLayer::init());
+        CC_BREAK_IF(! CCScene::init());
 
         //////////////////////////////////////////////////////////////////////////
         // add your codes below...
@@ -71,19 +56,17 @@ bool LoginScene::init()
 		mEditServer->retain();
 		mEditServer->setPosition(ccp(size.width/2, size.height - 100));
 		mEditServer->setText("127.0.0.1:54347");
-		mEditServer->setPlaceHolder(mEditServer->getText());
-		mEditServer->setPlaceholderFont("Arial", 20);
-		mEditServer->setPlaceholderFontColor(ccBLACK);
+		mEditServer->setFontColor(ccBLACK);
 		addChild(mEditServer);
 
 		// UserName
 		CCSize nameSize(size.width / 3, 30);
-		CCEditBox* name = CCEditBox::create(nameSize, CCScale9Sprite::create("green_edit.png"));
-		name->setPosition(ccp(size.width/2, size.height - 150));
-		name->setPlaceHolder("Enter your name.");
-		name->setPlaceholderFont("Arial", 20);
-		name->setPlaceholderFontColor(ccBLUE);
-		addChild(name);
+		mEditUserName = CCEditBox::create(nameSize, CCScale9Sprite::create("green_edit.png"));
+		mEditUserName->retain();
+		mEditUserName->setPosition(ccp(size.width/2, size.height - 150));
+		mEditUserName->setText("anonymous");
+		mEditUserName->setFontColor(ccBLUE);
+		addChild(mEditUserName);
 
 		// Connect
 	    CCLabelTTF* connectLabel = CCLabelTTF::create("Connect", "Arial", 20);
@@ -102,6 +85,6 @@ bool LoginScene::init()
 void LoginScene::menuConnectCallback(CCObject* pSender)
 {
     AppDelegate* app = static_cast<AppDelegate*>(CCApplication::sharedApplication());
-	app->ConnectToServer(mEditServer->getText());
+	app->ConnectToServer(mEditServer->getText(), mEditUserName->getText());
 }
 

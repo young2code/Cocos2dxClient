@@ -3,6 +3,8 @@
 
 #include "cocos2d.h"
 #include "PollingSocket.h"
+#include "FSM.h"
+#include <string>
 
 /**
 @brief    The cocos2d Application.
@@ -34,27 +36,34 @@ public:
     */
     virtual void applicationWillEnterForeground();
 
-	void ConnectToServer(const char* address);
+	void Update(float dt);
+
+	void ConnectToServer(const char* address, const char* name);
+
+	const char* GetUserName() const { return mUserName.c_str() ; }
 
 	void ShowMsgBox(const char* title, const char* body, ...);
 
-public:
-	class SocketUpdater : public cocos2d::CCObject
+private:
+	class Updater : public cocos2d::CCObject
 	{
 	public:
-		SocketUpdater(PollingSocket& socket) : mSocket(socket) {}
-		virtual void update(float dt);
+		Updater(AppDelegate& app) : mApp(app) {}
+		virtual void update(float dt) { mApp.Update(dt); }
 
 	private:
-		PollingSocket& mSocket;
+		AppDelegate& mApp;
 	};
+
 	void OnSocketConnect();
 	void OnSocketRecv(bool hasParseError, const rapidjson::Document& data);
 	void OnSocketClose();
 
 private:
+	Updater mUpdater;
 	PollingSocket mSocket;
-	SocketUpdater mSocketUpdater;
+	std::string mUserName;
+	FSM mFSM;
 };
 
 #endif  // __APP_DELEGATE_H__

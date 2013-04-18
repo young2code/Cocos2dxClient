@@ -9,18 +9,15 @@ namespace cocos2d
 	}
 }
 
-class LoginScene : public cocos2d::CCLayer
+class LoginScene : public cocos2d::CCScene
 {
 public:
 	LoginScene();
 	virtual ~LoginScene();
 
     // Here's a difference. Method 'init' in cocos2d-x returns bool, instead of returning 'id' in cocos2d-iphone
-    virtual bool init();  
-
-    // there's no 'id' in cpp, so we recommand to return the exactly class pointer
-    static cocos2d::CCScene* scene();
-    
+    virtual bool init();
+   
     // a selector callback
     void menuConnectCallback(CCObject* pSender);
 
@@ -29,5 +26,6 @@ public:
 
 private:
 	cocos2d::extension::CCEditBox* mEditServer;
+	cocos2d::extension::CCEditBox* mEditUserName;
 };
 

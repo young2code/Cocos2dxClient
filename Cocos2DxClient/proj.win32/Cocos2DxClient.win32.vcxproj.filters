@@ -68,6 +68,12 @@
     <ClInclude Include="Log.h">
       <Filter>utils</Filter>
     </ClInclude>
+    <ClInclude Include="LobbyScene.h">
+      <Filter>scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="FSM.h">
+      <Filter>utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Classes\HelloWorldScene.cpp">
@@ -89,6 +95,12 @@
       <Filter>network</Filter>
     </ClCompile>
     <ClCompile Include="Log.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="LobbyScene.cpp">
+      <Filter>scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="FSM.cpp">
       <Filter>utils</Filter>
     </ClCompile>
   </ItemGroup>

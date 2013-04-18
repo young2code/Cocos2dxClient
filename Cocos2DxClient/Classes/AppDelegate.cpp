@@ -2,6 +2,7 @@
 #include "CCEGLView.h"
 #include "AppDelegate.h"
 #include "LoginScene.h"
+#include "LobbyScene.h"
 #include "CCScheduler.h"
 
 #include "Network.h"
@@ -13,7 +14,7 @@
 USING_NS_CC;
 
 AppDelegate::AppDelegate()
-	: mSocketUpdater(mSocket)
+	: mUpdater(*this)
 {
 	Network::Init();
 
@@ -43,14 +44,11 @@ bool AppDelegate::applicationDidFinishLaunching()
 
 	// polling socket events
     CCScheduler* defaultScheduler = CCDirector::sharedDirector()->getScheduler();
-	defaultScheduler->scheduleSelector(schedule_selector(AppDelegate::SocketUpdater::update), &mSocketUpdater, 0, false);
+	defaultScheduler->scheduleSelector(schedule_selector(AppDelegate::Updater::update), &mUpdater, 0, false);
 
     // create a scene. it's an autorelease object
-    //CCScene *pScene = HelloWorld::scene();
-    CCScene *pScene = LoginScene::scene();
-
     // run
-    pDirector->runWithScene(pScene);
+    pDirector->runWithScene(LoginScene::create());
     return true;
 }
 
@@ -67,20 +65,24 @@ void AppDelegate::applicationWillEnterForeground()
 }
 
 
-void AppDelegate::ConnectToServer(const char* address)
+void AppDelegate::Update(float dt)
 {
+	mSocket.Poll();
+	mFSM.Update();
+}
+
+
+void AppDelegate::ConnectToServer(const char* address, const char* name)
+{
+	mUserName = name;
 	mSocket.AsyncConnect(address);
 }
 
 
-void AppDelegate::SocketUpdater::update(float dt)
-{
-	mSocket.Poll();
-}
-
 void AppDelegate::OnSocketConnect()
 {
 	LOG("AppDelegate::OnSocketConnect()");
+	CCDirector::sharedDirector()->replaceScene(LobbyScene::create());
 }
 
 void AppDelegate::OnSocketRecv(bool hasParseError, const rapidjson::Document& data)
@@ -103,6 +105,9 @@ void AppDelegate::OnSocketClose()
 	PollingSocket::OnRecvFunc onRecv = boost::bind(&AppDelegate::OnSocketRecv, this, _1, _2);
 	PollingSocket::OnCloseFunc onClose = boost::bind(&AppDelegate::OnSocketClose, this);
 	mSocket.Init(onConnect, onRecv, onClose);
+
+	// go back to login scene
+	CCDirector::sharedDirector()->replaceScene(LoginScene::create());
 }
 
 void AppDelegate::ShowMsgBox(const char* title, const char* body, ...)

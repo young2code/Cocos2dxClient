@@ -25,8 +25,6 @@ public:
 	void AsyncSend(const char* jsonStr, int total);
 	void AsyncSend(const rapidjson::Document& data);
 
-	bool IsConnected() const { return mConnected; }
-
 private:
 	void TrySend();
 	void TryRecv();
@@ -36,7 +34,15 @@ private:
 private:
 	SOCKET mSocket;
 
-	bool mConnected;
+	enum State
+	{
+		kStateWait,
+		kStateConnecting,
+		kStateConnected,
+		kStateClosed,
+	};
+
+	State mState;
 
 	OnConnectFunc mConnectCallback;
 	OnRecvFunc mRecvCallback;
