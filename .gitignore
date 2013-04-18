@@ -1,0 +1,7 @@
+Cocos2DxClient/proj.win32/Release.win32
+Cocos2DxClient/proj.win32/Debug.win32
+Cocos2DxClient/cocos2dx
+*.ncb
+*.suo
+*.user
+*.png
