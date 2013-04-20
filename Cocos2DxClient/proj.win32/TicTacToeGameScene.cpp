@@ -11,7 +11,6 @@ using namespace TicTacToe;
 
 TicTacToeGameScene::TicTacToeGameScene()
 	: mMyIndex(kPlayer1)
-	, mCurTurn(kPlayer1)
 	, mBoardLayer(NULL)
 	, mHUDLayer(NULL)
 {
@@ -76,14 +75,15 @@ void TicTacToeGameScene::InitFSM()
 							  boost::bind(&TicTacToeGameScene::OnLeave##State, this, _1)
 
 	mFSM.RegisterState(kStateSetPlayers, BIND_CALLBACKS(SetPlayers));
+	mFSM.RegisterState(kStateSetTurn, BIND_CALLBACKS(SetTurn));
 	mFSM.RegisterState(kStateMyTurn, BIND_CALLBACKS(MyTurn));
-	mFSM.RegisterState(kStateYourTurn, BIND_CALLBACKS(YourTurn));
+	mFSM.RegisterState(kStateWait, BIND_CALLBACKS(Wait));
 	mFSM.RegisterState(kStateGameEnd, BIND_CALLBACKS(GameEnd));
 	mFSM.RegisterState(kStateGameCanceled, BIND_CALLBACKS(GameCanceled));
 
 #undef BIND_CALLBACKS
 
-	mFSM.SetState(kStateSetPlayers);
+	//mFSM.SetState(kStateSetPlayers);
 }
 
 
@@ -102,8 +102,9 @@ bool TicTacToeGameScene::OnRecv(rapidjson::Document& data)
 		switch(mFSM.GetState())
 		{
 		case kStateSetPlayers:		OnUpdateSetPlayers(data);	break;
+		case kStateSetTurn:			OnUpdateSetTurn(data);		break;
 		case kStateMyTurn:			OnUpdateMyTurn(data);		break;
-		case kStateYourTurn:		OnUpdateYourTurn(data);		break;
+		case kStateWait:			OnUpdateWait(data);			break;
 		case kStateGameEnd:			OnUpdateGameEnd(data);		break;
 		case kStateGameCanceled:	OnUpdateGameCanceled(data);	break;
 		default:
@@ -150,10 +151,8 @@ void TicTacToeGameScene::OnUpdateSetPlayers(rapidjson::Document& data)
 				mPlayers[kPlayer1].name.c_str(), mPlayers[kPlayer2].name.c_str(), assigend);
 
 		mMyIndex = (assigend == 1 ? kPlayer1 : kPlayer2);
-		State nextState = (mMyIndex == kPlayer1 ? kStateMyTurn : kStateYourTurn);
 
-		LOG("TicTacToeGameScene::OnUpdateSetPlayers - mMyIndex[%d], nextState[%d]", mMyIndex, nextState);
-		mFSM.SetState(nextState);
+		mFSM.SetState(kStateSetTurn);
 	}
 }
 
@@ -162,9 +161,42 @@ void TicTacToeGameScene::OnLeaveSetPlayers(int nNextState)
 	LOG("TicTacToeGameScene::OnLeaveSetPlayers()");
 }
 
+void TicTacToeGameScene::OnEnterSetTurn(int nPrevState)
+{
+	LOG("TicTacToeGameScene::OnEnterSetTurn()");
+}
+
+void TicTacToeGameScene::OnUpdateSetTurn(rapidjson::Document& data)
+{
+	assert(data["subtype"].IsString());	
+	std::string subtype(data["subtype"].GetString());
+
+	if (subtype == "setturn")
+	{
+		assert(data["player"].IsInt());
+		PlayerIndex curPlayerIndex = static_cast<PlayerIndex>(data["player"].GetInt() - 1);
+
+		if (curPlayerIndex == mMyIndex)
+		{
+			mFSM.SetState(kStateMyTurn);
+		}
+		else
+		{
+			mFSM.SetState(kStateWait);
+		}
+	}
+}
+
+void TicTacToeGameScene::OnLeaveSetTurn(int nNextState)
+{
+	LOG("TicTacToeGameScene::OnLeaveSetTurn()");
+}
+
+
 void TicTacToeGameScene::OnEnterMyTurn(int nPrevState)
 {
 	LOG("TicTacToeGameScene::OnEnterMyTurn()");
+	mHUDLayer->SetTitle("It's your turn.");
 }
 void TicTacToeGameScene::OnUpdateMyTurn(rapidjson::Document& data){}
 void TicTacToeGameScene::OnLeaveMyTurn(int nNextState)
@@ -172,14 +204,16 @@ void TicTacToeGameScene::OnLeaveMyTurn(int nNextState)
 	LOG("TicTacToeGameScene::OnLeaveMyTurn()");
 }
 
-void TicTacToeGameScene::OnEnterYourTurn(int nPrevState)
+void TicTacToeGameScene::OnEnterWait(int nPrevState)
 {
-	LOG("TicTacToeGameScene::OnEnterYourTurn()");
+	LOG("TicTacToeGameScene::OnEnterWait()");
+	mHUDLayer->SetTitle("Wait your turn.");
+
 }
-void TicTacToeGameScene::OnUpdateYourTurn(rapidjson::Document& data){}
-void TicTacToeGameScene::OnLeaveYourTurn(int nNextState)
+void TicTacToeGameScene::OnUpdateWait(rapidjson::Document& data){}
+void TicTacToeGameScene::OnLeaveWait(int nNextState)
 {
-	LOG("TicTacToeGameScene::OnLeaveYourTurn()");
+	LOG("TicTacToeGameScene::OnLeaveWait()");
 }
 
 void TicTacToeGameScene::OnEnterGameEnd(int nPrevState)
@@ -202,24 +236,126 @@ void TicTacToeGameScene::OnLeaveGameCanceled(int nNextState)
 	LOG("TicTacToeGameScene::OnLeaveGameCanceled()");
 }
 
+//////////////////////////////////////////////////////////////////////////
+// Board 
+SymbolNode::SymbolNode()
+	: mSymbol(kSymbolNone)
+{
+}
+
+
+SymbolNode::~SymbolNode()
+{
+}
+
+bool SymbolNode::init()
+{
+	CCNode::init();
+	return true;
+}
+
+void SymbolNode::draw()
+{
+	CCSize size = getContentSize();
+
+	switch(mSymbol)
+	{
+	case kSymbolNone:
+	    ccDrawColor4F(0.0f, 1.0f, 0.0f, 1.0f);
+		ccDrawRect(ccp(0,0), ccp(size.width,size.height));
+		return;
+
+	case kSymbolOOO:
+		return;
+
+	case kSymbolXXX:
+		return;
+
+	default:
+		assert(0);
+		return;
+	}
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Board 
 BoardLayer::BoardLayer()
 {
+	for (int row = 0 ; row < kCellRows ; ++row)
+	{
+		for (int col = 0 ; col < kCellColumns ; ++col)
+		{
+			mBoard[row][col] = NULL;
+		}
+	}
 }
 
 BoardLayer::~BoardLayer()
 {
+	for (int row = 0 ; row < kCellRows ; ++row)
+	{
+		for (int col = 0 ; col < kCellColumns ; ++col)
+		{
+			SymbolNode* symbol = mBoard[row][col];
+			symbol->release();
+		}
+	}
 }
 
 bool BoardLayer::init()
 {
 	CCLayer::init();
 
+	const float scale = 0.8f;
+
+	CCSize size = CCDirector::sharedDirector()->getWinSize();
+
+	float vertOffset = size.width / kCellColumns;
+	float horzOffset = size.height / kCellRows;
+
+
+	for (int row = 0 ; row < kCellRows ; ++row)
+	{
+		for (int col = 0 ; col < kCellColumns ; ++col)
+		{
+			SymbolNode* newSymbol = SymbolNode::create();
+			newSymbol->retain();
+			newSymbol->setScale(scale);
+			newSymbol->setAnchorPoint(ccp(0.5f, 0.5f));
+			newSymbol->setContentSize(CCSize(vertOffset, horzOffset));
+			newSymbol->setPosition(col*vertOffset + vertOffset/2.0f, row*horzOffset + horzOffset/2.0f);
+			addChild(newSymbol);
+			mBoard[row][col] = newSymbol;
+		}
+	}
+
+	setScale(scale);
+	setAnchorPoint(ccp(0.5f, 0.5f));
+
 	return true;
 }
 
+void BoardLayer::draw()
+{
+	CCSize size = CCDirector::sharedDirector()->getWinSize();
+
+	float vertOffset = size.width / kCellColumns;
+	float horzOffset = size.height / kCellRows;
+
+    ccDrawColor4F(1.0f, 0.0f, 0.5f, 1.0f);
+	for (int row = 0 ; row <= kCellRows ; ++row)
+	{
+		float y = row * horzOffset;
+	    ccDrawLine(ccp(0, y), ccp(size.width, y));
+
+		for (int col = 0 ; col <= kCellColumns ; ++col)
+		{
+			float x = col * vertOffset;
+			ccDrawLine(ccp(x, 0), ccp(x, size.height));
+		}
+	}
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Hud 
@@ -255,4 +391,5 @@ bool HUDLayer::init()
 
 void HUDLayer::SetTitle(const char* title)
 {
+	mLabelTitle->setString(title);
 }

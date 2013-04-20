@@ -21,7 +21,7 @@ AppDelegate::AppDelegate()
 	Network::Init();
 
 #define BIND_CALLBACKS(State) boost::bind(&AppDelegate::OnEnter##State, this, _1), \
-							  boost::bind(&AppDelegate::OnUpdate##State, this), \
+							  boost::bind(&AppDelegate::DummyUpdate, this), \
 							  boost::bind(&AppDelegate::OnLeave##State, this, _1)
 
 	mFSM.RegisterState(kStateLogin, BIND_CALLBACKS(Login));
@@ -62,7 +62,8 @@ bool AppDelegate::applicationDidFinishLaunching()
 	defaultScheduler->scheduleSelector(schedule_selector(AppDelegate::Updater::update), &mUpdater, 0, false);
 
 	// Start Login screen
-	mFSM.SetState(kStateLogin);
+	//mFSM.SetState(kStateLogin);
+	mFSM.SetState(kStateTicTacToeGame);
 
     return true;
 }
@@ -97,6 +98,7 @@ void AppDelegate::ConnectToServer(const char* address, const char* name)
 void AppDelegate::OnSocketConnect()
 {
 	LOG("AppDelegate::OnSocketConnect()");
+	assert(mFSM.GetState() == kStateLogin);
 	mFSM.SetState(kStateLobby);
 }
 
@@ -113,54 +115,14 @@ void AppDelegate::OnSocketRecv(bool hasParseError, rapidjson::Document& data)
 	CCDirector* director = CCDirector::sharedDirector();
 	switch (mFSM.GetState())
 	{
-	case kStateLogin:
-		break;
-
-	case kStateLobby:
-		{
-			LobbyScene* lobby = static_cast<LobbyScene*>(mCurScene);
-			if (lobby->OnRecv(data))
-			{
-				return;
-			}
-		}
-		break;
-
-	case kStateTicTacToeGame:
-		{
-			TicTacToeGameScene* game = static_cast<TicTacToeGameScene*>(mCurScene);
-			if (game->OnRecv(data))
-			{
-				return;
-			}
-		}
-		break;
+	case kStateLogin:			OnUpdateLogin(data);			break;
+	case kStateLobby:			OnUpdateLobby(data);			break;
+	case kStateTicTacToeGame:	OnUpdateTicTacToeGame(data);	break;
 
 	default:
 		assert(0);
 		return;
 	}
-
-	assert(data["type"].IsString());	
-	std::string type(data["type"].GetString());
-
-	if (type == "game_start")
-	{		
-		assert(mFSM.GetState() == kStateLobby);
-		assert(data["game"].IsString());	
-		std::string game(data["game"].GetString());
-		if (game == "tictactoe")
-		{
-			mFSM.SetState(kStateTicTacToeGame);
-		}
-
-		// add more games..
-	}
-	else if ( type == "game_end")
-	{
-		mFSM.SetState(kStateLobby);
-	}
-
 }
 
 void AppDelegate::OnSocketClose()
@@ -208,7 +170,12 @@ void AppDelegate::OnEnterLogin(int prevState)
 		director->runWithScene(mCurScene);
 	}
 }
-void AppDelegate::OnUpdateLogin(){}
+
+void AppDelegate::OnUpdateLogin(rapidjson::Document& data)
+{
+	// wait for conneciton is complete.
+}
+
 void AppDelegate::OnLeaveLogin(int nextState)
 {
 	mCurScene->release();
@@ -223,7 +190,28 @@ void AppDelegate::OnEnterLobby(int prevState)
 
 	CCDirector::sharedDirector()->replaceScene(mCurScene);
 }
-void AppDelegate::OnUpdateLobby(){}
+
+void AppDelegate::OnUpdateLobby(rapidjson::Document& data)
+{
+	static_cast<LobbyScene*>(mCurScene)->OnRecv(data);
+
+	assert(data["type"].IsString());	
+	std::string type(data["type"].GetString());
+
+	if (type == "game_start")
+	{		
+		assert(mFSM.GetState() == kStateLobby);
+		assert(data["game"].IsString());	
+		std::string game(data["game"].GetString());
+		if (game == "tictactoe")
+		{
+			mFSM.SetState(kStateTicTacToeGame);
+		}
+
+		// add more games..
+	}
+}
+
 void AppDelegate::OnLeaveLobby(int nextState)
 {
 	mCurScene->release();
@@ -237,9 +225,15 @@ void AppDelegate::OnEnterTicTacToeGame(int prevState)
 	mCurScene = TicTacToeGameScene::create();
 	mCurScene->retain();
 
-	CCDirector::sharedDirector()->replaceScene(mCurScene);
+	//CCDirector::sharedDirector()->replaceScene(mCurScene);
+	CCDirector::sharedDirector()->runWithScene(mCurScene);
 }
-void AppDelegate::OnUpdateTicTacToeGame(){}
+
+void AppDelegate::OnUpdateTicTacToeGame(rapidjson::Document& data)
+{
+	static_cast<TicTacToeGameScene*>(mCurScene)->OnRecv(data);
+}
+
 void AppDelegate::OnLeaveTicTacToeGame(int nextState)
 {
 	mCurScene->release();

@@ -5,6 +5,7 @@
 #include "PollingSocket.h"
 #include "FSM.h"
 #include <string>
+#include <rapidjson/document.h>
 
 /**
 @brief    The cocos2d Application.
@@ -65,16 +66,18 @@ private:
 
 	// fsm
 	void OnEnterLogin(int prevState);
-	void OnUpdateLogin();
+	void OnUpdateLogin(rapidjson::Document& data);
 	void OnLeaveLogin(int nextState);
 
 	void OnEnterLobby(int prevState);
-	void OnUpdateLobby();
+	void OnUpdateLobby(rapidjson::Document& data);
 	void OnLeaveLobby(int nextState);
 
 	void OnEnterTicTacToeGame(int prevState);
-	void OnUpdateTicTacToeGame();
+	void OnUpdateTicTacToeGame(rapidjson::Document& data);
 	void OnLeaveTicTacToeGame(int nextState);
+
+	void DummyUpdate() {}
 
 private:
 	Updater mUpdater;

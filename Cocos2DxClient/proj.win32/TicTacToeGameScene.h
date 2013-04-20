@@ -15,6 +15,37 @@ namespace cocos2d
 
 namespace TicTacToe
 {
+	enum Symbol
+	{
+		kSymbolNone = 0, 
+		kSymbolOOO,
+		kSymbolXXX, 
+	};
+
+	enum CellCount
+	{
+		kCellRows = 3,
+		kCellColumns = 3,
+	};
+
+	class SymbolNode : public cocos2d::CCNode
+	{
+	public:
+		SymbolNode();
+		virtual ~SymbolNode();
+
+		virtual bool init();  
+		virtual void draw();
+
+		void SetSymbol(Symbol symbol) { mSymbol = symbol; }
+
+		// implement the "static node()" method manually
+	    CREATE_FUNC(SymbolNode);
+
+	private:
+		Symbol mSymbol;
+	};
+
 	class BoardLayer : public cocos2d::CCLayer
 	{
 	public:
@@ -22,9 +53,13 @@ namespace TicTacToe
 		virtual ~BoardLayer();
 
 		virtual bool init();  
+		virtual void draw();
 
 	    // implement the "static node()" method manually
 	    CREATE_FUNC(BoardLayer);
+
+	private:
+		SymbolNode* mBoard[kCellRows][kCellColumns];
 	};
 
 	class HUDLayer : public cocos2d::CCLayer
@@ -69,13 +104,17 @@ private:
 	void OnUpdateSetPlayers(rapidjson::Document& data);
 	void OnLeaveSetPlayers(int nNextState);
 
+	void OnEnterSetTurn(int nPrevState);
+	void OnUpdateSetTurn(rapidjson::Document& data);
+	void OnLeaveSetTurn(int nNextState);
+
 	void OnEnterMyTurn(int nPrevState);
 	void OnUpdateMyTurn(rapidjson::Document& data);
 	void OnLeaveMyTurn(int nNextState);
 
-	void OnEnterYourTurn(int nPrevState);
-	void OnUpdateYourTurn(rapidjson::Document& data);
-	void OnLeaveYourTurn(int nNextState);
+	void OnEnterWait(int nPrevState);
+	void OnUpdateWait(rapidjson::Document& data);
+	void OnLeaveWait(int nNextState);
 
 	void OnEnterGameEnd(int nPrevState);
 	void OnUpdateGameEnd(rapidjson::Document& data);
@@ -91,8 +130,9 @@ private:
 	enum State
 	{
 		kStateSetPlayers,
+		kStateSetTurn,
 		kStateMyTurn,
-		kStateYourTurn,
+		kStateWait,
 		kStateGameEnd,
 		kStateGameCanceled,
 	};
@@ -114,7 +154,6 @@ private:
 
 	Player mPlayers[kPlayerCount];
 	PlayerIndex mMyIndex;
-	PlayerIndex mCurTurn;
 
 	TicTacToe::BoardLayer* mBoardLayer;
 	TicTacToe::HUDLayer* mHUDLayer;
