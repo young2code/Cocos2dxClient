@@ -129,8 +129,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Classes\AppDelegate.h" />
-    <ClInclude Include="..\Classes\HelloWorldScene.h" />
     <ClInclude Include="FSM.h" />
+    <ClInclude Include="TicTacToeGameScene.h" />
     <ClInclude Include="LobbyScene.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="LoginScene.h" />
@@ -142,8 +142,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Classes\AppDelegate.cpp" />
-    <ClCompile Include="..\Classes\HelloWorldScene.cpp" />
     <ClCompile Include="FSM.cpp" />
+    <ClCompile Include="TicTacToeGameScene.cpp" />
     <ClCompile Include="LobbyScene.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="LoginScene.cpp" />

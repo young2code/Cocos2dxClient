@@ -41,9 +41,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Classes\HelloWorldScene.h">
-      <Filter>scenes</Filter>
-    </ClInclude>
     <ClInclude Include="..\Classes\AppDelegate.h">
       <Filter>main</Filter>
     </ClInclude>
@@ -74,11 +71,11 @@
     <ClInclude Include="FSM.h">
       <Filter>utils</Filter>
     </ClInclude>
+    <ClInclude Include="TicTacToeGameScene.h">
+      <Filter>scenes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Classes\HelloWorldScene.cpp">
-      <Filter>scenes</Filter>
-    </ClCompile>
     <ClCompile Include="..\Classes\AppDelegate.cpp">
       <Filter>main</Filter>
     </ClCompile>
@@ -102,6 +99,9 @@
     </ClCompile>
     <ClCompile Include="FSM.cpp">
       <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="TicTacToeGameScene.cpp">
+      <Filter>scenes</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

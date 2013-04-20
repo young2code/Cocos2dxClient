@@ -3,6 +3,7 @@
 #include "AppDelegate.h"
 #include "LoginScene.h"
 #include "LobbyScene.h"
+#include "TicTacToeGameScene.h"
 #include "CCScheduler.h"
 
 #include "Network.h"
@@ -15,24 +16,30 @@ USING_NS_CC;
 
 AppDelegate::AppDelegate()
 	: mUpdater(*this)
+	, mCurScene(NULL)
 {
 	Network::Init();
 
-	mFSM.RegisterState(kStateLogin, boost::bind(&AppDelegate::OnEnterLogin, this, _1),
-									boost::bind(&AppDelegate::OnUpdateLogin, this),
-									boost::bind(&AppDelegate::OnLeaveLogin, this, _1));
+#define BIND_CALLBACKS(State) boost::bind(&AppDelegate::OnEnter##State, this, _1), \
+							  boost::bind(&AppDelegate::OnUpdate##State, this), \
+							  boost::bind(&AppDelegate::OnLeave##State, this, _1)
 
-	mFSM.RegisterState(kStateLobby, boost::bind(&AppDelegate::OnEnterLobby, this, _1),
-									boost::bind(&AppDelegate::OnUpdateLobby, this),
-									boost::bind(&AppDelegate::OnLeaveLobby, this, _1));
+	mFSM.RegisterState(kStateLogin, BIND_CALLBACKS(Login));
+	mFSM.RegisterState(kStateLobby, BIND_CALLBACKS(Lobby));
+	mFSM.RegisterState(kStateTicTacToeGame, BIND_CALLBACKS(TicTacToeGame));
 
-	mFSM.RegisterState(kStateGame, boost::bind(&AppDelegate::OnEnterGame, this, _1),
-								   boost::bind(&AppDelegate::OnUpdateGame, this),
-								   boost::bind(&AppDelegate::OnLeaveGame, this, _1));
+#undef BIND_CALLBACKS
+
 }
 
 AppDelegate::~AppDelegate()
 {
+	if (mCurScene)
+	{
+		mCurScene->release();
+		mCurScene = NULL;
+	}
+
 	mFSM.Reset(false);
 	mSocket.Shutdown(false);
 	Network::Shutdown();
@@ -111,15 +118,21 @@ void AppDelegate::OnSocketRecv(bool hasParseError, rapidjson::Document& data)
 
 	case kStateLobby:
 		{
-			LobbyScene* lobby = static_cast<LobbyScene*>(director->getRunningScene());
-			lobby->OnRecv(data);
+			LobbyScene* lobby = static_cast<LobbyScene*>(mCurScene);
+			if (lobby->OnRecv(data))
+			{
+				return;
+			}
 		}
 		break;
 
-	case kStateGame:
+	case kStateTicTacToeGame:
 		{
-			//GameScene* game = static_cast<GameScene*>(director->getRunningScene());
-			//game->OnRecv(data);
+			TicTacToeGameScene* game = static_cast<TicTacToeGameScene*>(mCurScene);
+			if (game->OnRecv(data))
+			{
+				return;
+			}
 		}
 		break;
 
@@ -127,6 +140,27 @@ void AppDelegate::OnSocketRecv(bool hasParseError, rapidjson::Document& data)
 		assert(0);
 		return;
 	}
+
+	assert(data["type"].IsString());	
+	std::string type(data["type"].GetString());
+
+	if (type == "game_start")
+	{		
+		assert(mFSM.GetState() == kStateLobby);
+		assert(data["game"].IsString());	
+		std::string game(data["game"].GetString());
+		if (game == "tictactoe")
+		{
+			mFSM.SetState(kStateTicTacToeGame);
+		}
+
+		// add more games..
+	}
+	else if ( type == "game_end")
+	{
+		mFSM.SetState(kStateLobby);
+	}
+
 }
 
 void AppDelegate::OnSocketClose()
@@ -134,6 +168,7 @@ void AppDelegate::OnSocketClose()
 	LOG("AppDelegate::OnSocketClose()");
 	ShowMsgBox("Error", "Connection closed.");
 
+	mFSM.SetState(kStateLogin);
 }
 
 void AppDelegate::Send(const rapidjson::Document& data)
@@ -160,21 +195,53 @@ void AppDelegate::OnEnterLogin(int prevState)
 	PollingSocket::OnCloseFunc onClose = boost::bind(&AppDelegate::OnSocketClose, this);
 	mSocket.Init(onConnect, onRecv, onClose);
 
-    CCDirector::sharedDirector()->runWithScene(LoginScene::create());
+	mCurScene = LoginScene::create();
+	mCurScene->retain();
+
+	CCDirector* director = CCDirector::sharedDirector();
+	if (director->getRunningScene())
+	{
+		director->replaceScene(mCurScene);
+	}
+	else
+	{
+		director->runWithScene(mCurScene);
+	}
 }
 void AppDelegate::OnUpdateLogin(){}
-void AppDelegate::OnLeaveLogin(int nextState){}
+void AppDelegate::OnLeaveLogin(int nextState)
+{
+	mCurScene->release();
+	mCurScene = NULL;
+}
 
 // Lobby
 void AppDelegate::OnEnterLobby(int prevState)
 {
-	CCDirector::sharedDirector()->replaceScene(LobbyScene::create());
+	mCurScene = LobbyScene::create();
+	mCurScene->retain();
+
+	CCDirector::sharedDirector()->replaceScene(mCurScene);
 }
 void AppDelegate::OnUpdateLobby(){}
-void AppDelegate::OnLeaveLobby(int nextState){}
+void AppDelegate::OnLeaveLobby(int nextState)
+{
+	mCurScene->release();
+	mCurScene = NULL;
+}
 
 
 // Game
-void AppDelegate::OnEnterGame(int prevState){}
-void AppDelegate::OnUpdateGame(){}
-void AppDelegate::OnLeaveGame(int nextState){}
+void AppDelegate::OnEnterTicTacToeGame(int prevState)
+{
+	mCurScene = TicTacToeGameScene::create();
+	mCurScene->retain();
+
+	CCDirector::sharedDirector()->replaceScene(mCurScene);
+}
+void AppDelegate::OnUpdateTicTacToeGame(){}
+void AppDelegate::OnLeaveTicTacToeGame(int nextState)
+{
+	mCurScene->release();
+	mCurScene = NULL;
+}

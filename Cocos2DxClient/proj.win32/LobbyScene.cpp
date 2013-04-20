@@ -97,15 +97,17 @@ void LobbyScene::menuEchoCallback(CCObject* pSender)
 }
 
 
-void LobbyScene::OnRecv(rapidjson::Document& data)
+bool LobbyScene::OnRecv(rapidjson::Document& data)
 {
-	rapidjson::Value& type = data["type"];
-	if (type.IsString() && 0 == _stricmp(type.GetString(), "echo"))
+	assert(data["type"].IsString());	
+	std::string type(data["type"].GetString());
+
+	if (type == "echo")
 	{
-		rapidjson::Value& msg = data["msg"];
-		if (msg.IsString())
-		{
-			mLabelOutput->setString(msg.GetString());
-		}
+		assert(data["msg"].IsString());	
+		mLabelOutput->setString(data["msg"].GetString());
+		return true;
 	}
+
+	return false;
 }

@@ -42,6 +42,7 @@ void PollingSocket::Init(OnConnectFunc onConnect, OnRecvFunc onRecv, OnCloseFunc
 	{
 		ERROR_CODE(WSAGetLastError(), "PollingSocket::Init() - ioctlsocket failed.");
 		Shutdown();
+		return;
 	}
 
 	std::string address;
@@ -139,6 +140,7 @@ void PollingSocket::Poll()
 		{			
 			LOG("PollingSocket::Poll() - connect failed.");
 			Shutdown();
+			return;
 		}
 	}
 
@@ -147,7 +149,11 @@ void PollingSocket::Poll()
 
 void PollingSocket::AsyncConnect(const char* serverAddress)
 {
-	assert(mState == kStateWait);
+	if(mState != kStateWait)
+	{
+		return;
+	}
+
 	assert(mSocket != INVALID_SOCKET);
 		
     sockaddr_in address;
@@ -168,6 +174,7 @@ void PollingSocket::AsyncConnect(const char* serverAddress)
 		{
 			ERROR_CODE(WSAGetLastError(), "PollingSocket::AsyncConnect() - connect failed.");
 			Shutdown();
+			return;
 		}
 	}	
 
@@ -177,6 +184,11 @@ void PollingSocket::AsyncConnect(const char* serverAddress)
 
 void PollingSocket::AsyncSend(const char* jsonStr, int total)
 {
+	if(mState != kStateConnected)
+	{
+		return;
+	}
+
 	int available = mSendBuffer.capacity() - mSendBuffer.size();
 	if (available < total)
 	{
@@ -192,6 +204,11 @@ void PollingSocket::AsyncSend(const char* jsonStr, int total)
 	
 void PollingSocket::AsyncSend(const rapidjson::Document& data)
 {
+	if(mState != kStateConnected)
+	{
+		return;
+	}
+
 	rapidjson::StringBuffer buffer;
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 	data.Accept(writer);
@@ -202,7 +219,10 @@ void PollingSocket::AsyncSend(const rapidjson::Document& data)
 
 void PollingSocket::TrySend()
 {
-	assert(mState == kStateConnected);
+	if(mState != kStateConnected)
+	{
+		return;
+	}
 
 	while (!mSendBuffer.empty())
 	{
@@ -223,7 +243,10 @@ void PollingSocket::TrySend()
 			{
 				ERROR_CODE(WSAGetLastError(), "PollingSocket::TrySend() - send failed.");
 				Shutdown();				
+				return;
 			}
+
+			// WSAEWOULDBLOCK.
 			return;
 		}
 		
@@ -240,7 +263,10 @@ void PollingSocket::TrySend()
 
 void PollingSocket::TryRecv()
 {
-	assert(mState == kStateConnected);
+	if(mState != kStateConnected)
+	{
+		return;
+	}
 
 	int result = 0;
 	char temp[kMaxDataSize];

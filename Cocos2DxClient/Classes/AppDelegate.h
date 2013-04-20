@@ -11,7 +11,7 @@
 
 The reason for implement as private inheritance is to hide some interface call by CCDirector.
 */
-class  AppDelegate : private cocos2d::CCApplication
+class  AppDelegate : public cocos2d::CCApplication
 {
 public:
     AppDelegate();
@@ -42,7 +42,7 @@ public:
 
 	void Send(const rapidjson::Document& data);
 
-	const char* GetUserName() const { return mUserName.c_str() ; }
+	const char* GetMyName() const { return mUserName.c_str() ; }
 
 	void ShowMsgBox(const char* title, const char* body, ...);
 
@@ -72,9 +72,9 @@ private:
 	void OnUpdateLobby();
 	void OnLeaveLobby(int nextState);
 
-	void OnEnterGame(int prevState);
-	void OnUpdateGame();
-	void OnLeaveGame(int nextState);
+	void OnEnterTicTacToeGame(int prevState);
+	void OnUpdateTicTacToeGame();
+	void OnLeaveTicTacToeGame(int nextState);
 
 private:
 	Updater mUpdater;
@@ -85,9 +85,12 @@ private:
 	{
 		kStateLogin,
 		kStateLobby,
-		kStateGame,
+		kStateTicTacToeGame,
 	};
 	FSM mFSM;
+
+	// don't use getRunningScene() as it is not immediate mode.
+	cocos2d::CCScene* mCurScene;
 };
 
 #endif  // __APP_DELEGATE_H__

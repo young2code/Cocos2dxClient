@@ -18,12 +18,12 @@ public:
 	FSM(void);
 	~FSM(void);
 
-	void RegisterState(int nState, OnEnterFunc enter, OnUpdateFunc update, OnLeaveFunc leave);
-	void UnRegisterState(int nState);
+	void RegisterState(int state, OnEnterFunc enter, OnUpdateFunc update, OnLeaveFunc leave);
+	void UnRegisterState(int state);
 
 	void Reset(bool callLeave = true);
 
-	void SetState(int nNextState);
+	void SetState(int nextState);
 	int GetState() const { return mState; }
 
 	void Update();
@@ -38,6 +38,7 @@ private:
 
 private:
 	int mState;
-	std::map<int, Callbacks> mCallbacks;
+	typedef std::map<int, Callbacks> CallbackMap;
+	CallbackMap mCallbacks;
 };
 

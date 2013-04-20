@@ -24,7 +24,7 @@ public:
     void menuEchoCallback(CCObject* pSender);
 
 	// network
-	void OnRecv(rapidjson::Document& data);
+	bool OnRecv(rapidjson::Document& data);
 
     // implement the "static node()" method manually
     CREATE_FUNC(LobbyScene);
