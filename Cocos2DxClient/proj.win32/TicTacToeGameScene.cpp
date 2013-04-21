@@ -261,14 +261,19 @@ void SymbolNode::draw()
 	switch(mSymbol)
 	{
 	case kSymbolNone:
-	    ccDrawColor4F(0.0f, 1.0f, 0.0f, 1.0f);
-		ccDrawRect(ccp(0,0), ccp(size.width,size.height));
+		//ccDrawColor4F(0.0f, 1.0f, 0.0f, 1.0f);
+		//ccDrawRect(ccp(0,0), ccp(size.width,size.height));
 		return;
 
 	case kSymbolOOO:
+	    ccDrawColor4F(1.0f, 1.0f, 0.0f, 1.0f);
+		ccDrawCircle(ccp(size.width/2,size.height/2), min(size.width/2, size.height/2), CC_DEGREES_TO_RADIANS(360), 50, false);
 		return;
 
 	case kSymbolXXX:
+	    ccDrawColor4F(1.0f, 0.0f, 0.0f, 1.0f);
+		ccDrawLine(ccp(0,0), ccp(size.width,size.height));
+		ccDrawLine(ccp(size.width,0), ccp(0,size.height));
 		return;
 
 	default:
@@ -325,6 +330,10 @@ bool BoardLayer::init()
 			newSymbol->setAnchorPoint(ccp(0.5f, 0.5f));
 			newSymbol->setContentSize(CCSize(vertOffset, horzOffset));
 			newSymbol->setPosition(col*vertOffset + vertOffset/2.0f, row*horzOffset + horzOffset/2.0f);
+
+			// TEST
+			newSymbol->SetSymbol((Symbol)(rand() % 3));
+
 			addChild(newSymbol);
 			mBoard[row][col] = newSymbol;
 		}
