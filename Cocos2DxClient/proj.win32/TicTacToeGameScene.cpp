@@ -245,7 +245,11 @@ void TicTacToeGameScene::OnEnterGameEnd(int nPrevState)
 
 	AppDelegate* app = static_cast<AppDelegate*>(CCApplication::sharedApplication());
 
-	if (mMyIndex == mWinnerIndex)
+	if (mWinnerIndex < 0)
+	{
+		app->ShowMsgBox("Game", "Game Over : Draw!");
+	}
+	else if (mMyIndex == mWinnerIndex)
 	{
 		app->ShowMsgBox("Game", "Game Over : You Won!");
 	}
