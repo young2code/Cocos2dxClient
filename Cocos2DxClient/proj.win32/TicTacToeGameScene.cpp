@@ -11,6 +11,7 @@ using namespace TicTacToe;
 
 TicTacToeGameScene::TicTacToeGameScene()
 	: mMyIndex(kPlayer1)
+	, mWinnerIndex(kPlayer1)
 	, mBoardLayer(NULL)
 	, mHUDLayer(NULL)
 {
@@ -186,6 +187,12 @@ void TicTacToeGameScene::OnUpdateSetTurn(rapidjson::Document& data)
 			mFSM.SetState(kStateWait);
 		}
 	}
+	else if (subtype == "result")
+	{
+		assert(data["winner"].IsInt());
+		mWinnerIndex = static_cast<PlayerIndex>(data["winner"].GetInt() - 1);
+		mFSM.SetState(kStateGameEnd);
+	}
 }
 
 void TicTacToeGameScene::OnLeaveSetTurn(int nNextState)
@@ -197,7 +204,7 @@ void TicTacToeGameScene::OnLeaveSetTurn(int nNextState)
 void TicTacToeGameScene::OnEnterMyTurn(int nPrevState)
 {
 	LOG("TicTacToeGameScene::OnEnterMyTurn()");
-	mHUDLayer->SetTitle("It's your turn.");
+	mHUDLayer->SetTitle("It's your turn. (You are [%s]).", (mMyIndex == kPlayer1 ? "O" : "X"));
 	mBoardLayer->SetEnabled(true);
 }
 
@@ -215,7 +222,7 @@ void TicTacToeGameScene::OnLeaveMyTurn(int nNextState)
 void TicTacToeGameScene::OnEnterWait(int nPrevState)
 {
 	LOG("TicTacToeGameScene::OnEnterWait()");
-	mHUDLayer->SetTitle("Wait your turn.");
+	mHUDLayer->SetTitle("Wait your turn. (You are [%s]).", (mMyIndex == kPlayer1 ? "O" : "X"));
 
 }
 
@@ -232,6 +239,14 @@ void TicTacToeGameScene::OnLeaveWait(int nNextState)
 void TicTacToeGameScene::OnEnterGameEnd(int nPrevState)
 {
 	LOG("TicTacToeGameScene::OnEnterGameEnd()");
+	if (mMyIndex == mWinnerIndex)
+	{
+		mHUDLayer->SetTitle("Game Over : You Won!");
+	}
+	else 
+	{
+		mHUDLayer->SetTitle("Game Over : You Lost!");
+	}
 }
 void TicTacToeGameScene::OnUpdateGameEnd(rapidjson::Document& data){}
 void TicTacToeGameScene::OnLeaveGameEnd(int nNextState)
@@ -531,7 +546,13 @@ bool HUDLayer::init()
 	return true;
 }
 
-void HUDLayer::SetTitle(const char* title)
+void HUDLayer::SetTitle(const char* title, ...)
 {
-	mLabelTitle->setString(title);
+	char buffer[64] = {0,};
+	va_list args;
+	va_start(args, title);
+	vsnprintf_s(buffer, sizeof(buffer), sizeof(buffer)-1, title, args);
+	va_end(args);
+
+	mLabelTitle->setString(buffer);
 }

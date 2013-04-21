@@ -99,7 +99,7 @@ namespace TicTacToe
 
 		virtual bool init();  
 
-		void SetTitle(const char* title);
+		void SetTitle(const char* title, ...);
 
 	    // implement the "static node()" method manually
 	    CREATE_FUNC(HUDLayer);
@@ -187,6 +187,7 @@ private:
 
 	Player mPlayers[kPlayerCount];
 	PlayerIndex mMyIndex;
+	PlayerIndex mWinnerIndex;
 
 	TicTacToe::BoardLayer* mBoardLayer;
 	TicTacToe::HUDLayer* mHUDLayer;
