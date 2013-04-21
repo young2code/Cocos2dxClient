@@ -22,6 +22,7 @@ public:
 
     // a selector callback
     void menuEchoCallback(CCObject* pSender);
+    void menuTicTacToeCallback(CCObject* pSender);
 
 	// network
 	bool OnRecv(rapidjson::Document& data);

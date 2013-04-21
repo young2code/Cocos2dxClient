@@ -137,6 +137,17 @@ void AppDelegate::Send(const rapidjson::Document& data)
 	mSocket.AsyncSend(data);
 }
 
+void AppDelegate::GoToLobby()
+{
+	mFSM.SetState(kStateLobby);
+}
+
+void AppDelegate::GoToTicTacToe()
+{
+	mFSM.SetState(kStateTicTacToeGame);
+}
+
+
 void AppDelegate::ShowMsgBox(const char* title, const char* body, ...)
 {
 	char buffer[256] = {0,};
@@ -193,22 +204,6 @@ void AppDelegate::OnEnterLobby(int prevState)
 void AppDelegate::OnUpdateLobby(rapidjson::Document& data)
 {
 	static_cast<LobbyScene*>(mCurScene)->OnRecv(data);
-
-	assert(data["type"].IsString());	
-	std::string type(data["type"].GetString());
-
-	if (type == "game_start")
-	{		
-		assert(mFSM.GetState() == kStateLobby);
-		assert(data["game"].IsString());	
-		std::string game(data["game"].GetString());
-		if (game == "tictactoe")
-		{
-			mFSM.SetState(kStateTicTacToeGame);
-		}
-
-		// add more games..
-	}
 }
 
 void AppDelegate::OnLeaveLobby(int nextState)

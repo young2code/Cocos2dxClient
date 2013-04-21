@@ -62,6 +62,8 @@ bool TicTacToeGameScene::init()
 		mHUDLayer->retain();
 		addChild(mHUDLayer);
 
+		mFSM.SetState(kStateSetPlayers);
+
         bRet = true;
     } while (0);
 
@@ -84,8 +86,6 @@ void TicTacToeGameScene::InitFSM()
 	mFSM.RegisterState(kStateGameCanceled, BIND_CALLBACKS(GameCanceled));
 
 #undef BIND_CALLBACKS
-
-	mFSM.SetState(kStateSetPlayers);
 }
 
 
@@ -131,6 +131,7 @@ void TicTacToeGameScene::OnEnterSetPlayers(int nPrevState)
 
 	app->Send(playerData);
 
+	mHUDLayer->SetTitle("Please wait for the game to start...");
 }
 
 void TicTacToeGameScene::OnUpdateSetPlayers(rapidjson::Document& data)
@@ -239,14 +240,22 @@ void TicTacToeGameScene::OnLeaveWait(int nNextState)
 void TicTacToeGameScene::OnEnterGameEnd(int nPrevState)
 {
 	LOG("TicTacToeGameScene::OnEnterGameEnd()");
+	
+	CCDirector::sharedDirector()->drawScene();
+
+	AppDelegate* app = static_cast<AppDelegate*>(CCApplication::sharedApplication());
+
 	if (mMyIndex == mWinnerIndex)
 	{
-		mHUDLayer->SetTitle("Game Over : You Won!");
+		app->ShowMsgBox("Game", "Game Over : You Won!");
 	}
 	else 
 	{
-		mHUDLayer->SetTitle("Game Over : You Lost!");
+		app->ShowMsgBox("Game", "Game Over : You Lost!");
 	}
+
+	app->GoToLobby();
+
 }
 void TicTacToeGameScene::OnUpdateGameEnd(rapidjson::Document& data){}
 void TicTacToeGameScene::OnLeaveGameEnd(int nNextState)
@@ -257,6 +266,10 @@ void TicTacToeGameScene::OnLeaveGameEnd(int nNextState)
 void TicTacToeGameScene::OnEnterGameCanceled(int nPrevState)
 {
 	LOG("TicTacToeGameScene::OnEnterGameCanceled()");
+	AppDelegate* app = static_cast<AppDelegate*>(CCApplication::sharedApplication());
+
+	app->ShowMsgBox("Game", "Game Canceled!");
+	app->GoToLobby();
 }
 void TicTacToeGameScene::OnUpdateGameCanceled(rapidjson::Document& data){}
 void TicTacToeGameScene::OnLeaveGameCanceled(int nNextState)
@@ -300,9 +313,6 @@ void TicTacToeGameScene::CheckPlayerMove(rapidjson::Document& data)
 		int player = data["player"].GetInt();
 		int row = data["row"].GetInt();
 		int col = data["col"].GetInt();
-
-		assert(row < kCellRows);
-		assert(col < kCellColumns);
 
 		Symbol symbol = (player == 1 ? kSymbolOOO : kSymbolXXX);
 		mBoardLayer->SetSymbol(row, col, symbol);
@@ -548,7 +558,7 @@ bool HUDLayer::init()
 
 void HUDLayer::SetTitle(const char* title, ...)
 {
-	char buffer[64] = {0,};
+	char buffer[128] = {0,};
 	va_list args;
 	va_start(args, title);
 	vsnprintf_s(buffer, sizeof(buffer), sizeof(buffer)-1, title, args);

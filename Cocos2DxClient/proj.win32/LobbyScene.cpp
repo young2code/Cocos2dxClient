@@ -69,12 +69,21 @@ bool LobbyScene::init()
 		mLabelOutput->setPosition(ccp(size.width/2, size.height - 150));
 		addChild(mLabelOutput);
 
-		// Connect
-	    CCLabelTTF* echoLabel = CCLabelTTF::create("Echo", "Arial", 20);
+		// Echo
+	    CCLabelTTF* echoLabel = CCLabelTTF::create("Echo Test", "Arial", 20);
 		CCMenuItemLabel* connectItem = CCMenuItemLabel::create(echoLabel, this, menu_selector(LobbyScene::menuEchoCallback));
-        CCMenu* menu = CCMenu::create(connectItem, NULL);
+
+		// Start TicTacToe
+	    CCLabelTTF* tictactoeLabel = CCLabelTTF::create("Start TicTacToe", "Arial", 20);
+		CCMenuItemLabel* tictactoeItem = CCMenuItemLabel::create(tictactoeLabel, this, menu_selector(LobbyScene::menuTicTacToeCallback));
+		tictactoeItem->setPositionY(-20);
+
+		// Menu
+        CCMenu* menu = CCMenu::create();
+		menu->addChild(connectItem);
+		menu->addChild(tictactoeItem);
         menu->setPosition(ccp(size.width/2, size.height/2));
-        addChild(menu, 1);
+        addChild(menu);
 
 
         bRet = true;
@@ -94,6 +103,19 @@ void LobbyScene::menuEchoCallback(CCObject* pSender)
 	data.AddMember("msg", mEditInput->getText(), data.GetAllocator());
 
 	app->Send(data);
+}
+
+void LobbyScene::menuTicTacToeCallback(CCObject* pSender)
+{
+	AppDelegate* app = static_cast<AppDelegate*>(CCApplication::sharedApplication());
+	
+	rapidjson::Document data;
+	data.SetObject();
+	data.AddMember("type", "service_create", data.GetAllocator());
+	data.AddMember("name", "tictactoe", data.GetAllocator());
+
+	app->Send(data);
+	app->GoToTicTacToe();
 }
 
 

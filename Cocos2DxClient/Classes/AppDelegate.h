@@ -47,6 +47,9 @@ public:
 
 	void ShowMsgBox(const char* title, const char* body, ...);
 
+	void GoToLobby();
+	void GoToTicTacToe();
+
 private:
 	// updater. cocos2dx does not provide a global udpate function.
 	class Updater : public cocos2d::CCObject
