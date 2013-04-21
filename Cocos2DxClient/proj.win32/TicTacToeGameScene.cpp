@@ -1,11 +1,9 @@
 #include "TicTacToeGameScene.h"
-#include "GUI\CCEditBox\CCEditBox.h"
 #include "AppDelegate.h"
 #include <boost/bind.hpp>
 #include "Log.h"
 
 using namespace cocos2d;
-using namespace cocos2d::extension;
 using namespace TicTacToe;
 
 
@@ -94,13 +92,21 @@ void TicTacToeGameScene::ShutdownFSM()
 	mFSM.Reset(false);
 }
 
-bool TicTacToeGameScene::OnRecv(rapidjson::Document& data)
+void TicTacToeGameScene::OnRecv(rapidjson::Document& data)
 {
 	assert(data["type"].IsString());	
 	std::string type(data["type"].GetString());
 
 	if (type == "tictactoe")
 	{
+		assert(data["subtype"].IsString());	
+		std::string subtype(data["subtype"].GetString());
+		if (subtype == "canceled")
+		{
+			mFSM.SetState(kStateGameCanceled);
+			return;
+		}
+
 		switch(mFSM.GetState())
 		{
 		case kStateSetPlayers:		OnUpdateSetPlayers(data);	break;
@@ -111,11 +117,9 @@ bool TicTacToeGameScene::OnRecv(rapidjson::Document& data)
 		case kStateGameCanceled:	OnUpdateGameCanceled(data);	break;
 		default:
 			assert(0);
-			return false;
+			return;
 		}
-		return true;
 	}
-	return false;
 }
 
 void TicTacToeGameScene::OnEnterSetPlayers(int nPrevState)

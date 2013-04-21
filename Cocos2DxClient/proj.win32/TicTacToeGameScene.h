@@ -6,10 +6,6 @@
 
 namespace cocos2d
 {
-	namespace extension
-	{
-		class CCEditBox;
-	}
 	class CCLabelTTF;
 }
 
@@ -119,8 +115,7 @@ public:
 
     void menuEchoCallback(CCObject* pSender);
 
-	// network
-	bool OnRecv(rapidjson::Document& data);
+	void OnRecv(rapidjson::Document& data);
 
 	void OnSymbolTouched(const TicTacToe::SymbolNode* symbol);
 

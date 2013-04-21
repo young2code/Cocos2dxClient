@@ -47,7 +47,7 @@ bool LobbyScene::init()
         CCSize size = CCDirector::sharedDirector()->getWinSize();
 
 		// Title
-        CCLabelTTF* title = CCLabelTTF::create("Wait for other players..", "Arial", 24);
+        CCLabelTTF* title = CCLabelTTF::create("Lobby", "Arial", 24);
         title->setPosition(ccp(size.width / 2, size.height - 50));
         addChild(title, 1);
 
@@ -76,7 +76,7 @@ bool LobbyScene::init()
 		// Start TicTacToe
 	    CCLabelTTF* tictactoeLabel = CCLabelTTF::create("Start TicTacToe", "Arial", 20);
 		CCMenuItemLabel* tictactoeItem = CCMenuItemLabel::create(tictactoeLabel, this, menu_selector(LobbyScene::menuTicTacToeCallback));
-		tictactoeItem->setPositionY(-20);
+		tictactoeItem->setPositionY(-30);
 
 		// Menu
         CCMenu* menu = CCMenu::create();
