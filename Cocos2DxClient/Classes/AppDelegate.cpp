@@ -62,8 +62,7 @@ bool AppDelegate::applicationDidFinishLaunching()
 	defaultScheduler->scheduleSelector(schedule_selector(AppDelegate::Updater::update), &mUpdater, 0, false);
 
 	// Start Login screen
-	//mFSM.SetState(kStateLogin);
-	mFSM.SetState(kStateTicTacToeGame);
+	mFSM.SetState(kStateLogin);
 
     return true;
 }
@@ -225,8 +224,7 @@ void AppDelegate::OnEnterTicTacToeGame(int prevState)
 	mCurScene = TicTacToeGameScene::create();
 	mCurScene->retain();
 
-	//CCDirector::sharedDirector()->replaceScene(mCurScene);
-	CCDirector::sharedDirector()->runWithScene(mCurScene);
+	CCDirector::sharedDirector()->replaceScene(mCurScene);
 }
 
 void AppDelegate::OnUpdateTicTacToeGame(rapidjson::Document& data)

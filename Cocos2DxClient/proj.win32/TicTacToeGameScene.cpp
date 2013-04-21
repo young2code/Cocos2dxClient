@@ -84,7 +84,7 @@ void TicTacToeGameScene::InitFSM()
 
 #undef BIND_CALLBACKS
 
-	//mFSM.SetState(kStateSetPlayers);
+	mFSM.SetState(kStateSetPlayers);
 }
 
 
@@ -200,7 +200,12 @@ void TicTacToeGameScene::OnEnterMyTurn(int nPrevState)
 	mHUDLayer->SetTitle("It's your turn.");
 	mBoardLayer->SetEnabled(true);
 }
-void TicTacToeGameScene::OnUpdateMyTurn(rapidjson::Document& data){}
+
+void TicTacToeGameScene::OnUpdateMyTurn(rapidjson::Document& data)
+{
+	CheckPlayerMove(data);
+}
+
 void TicTacToeGameScene::OnLeaveMyTurn(int nNextState)
 {
 	LOG("TicTacToeGameScene::OnLeaveMyTurn()");
@@ -213,7 +218,12 @@ void TicTacToeGameScene::OnEnterWait(int nPrevState)
 	mHUDLayer->SetTitle("Wait your turn.");
 
 }
-void TicTacToeGameScene::OnUpdateWait(rapidjson::Document& data){}
+
+void TicTacToeGameScene::OnUpdateWait(rapidjson::Document& data)
+{
+	CheckPlayerMove(data);
+}
+
 void TicTacToeGameScene::OnLeaveWait(int nNextState)
 {
 	LOG("TicTacToeGameScene::OnLeaveWait()");
@@ -239,7 +249,7 @@ void TicTacToeGameScene::OnLeaveGameCanceled(int nNextState)
 	LOG("TicTacToeGameScene::OnLeaveGameCanceled()");
 }
 
-void TicTacToeGameScene::OnSymbolTouched(TicTacToe::SymbolNode* symbol)
+void TicTacToeGameScene::OnSymbolTouched(const TicTacToe::SymbolNode* symbol)
 {
 	if (mFSM.GetState() == kStateMyTurn)
 	{
@@ -257,6 +267,32 @@ void TicTacToeGameScene::OnSymbolTouched(TicTacToe::SymbolNode* symbol)
 			AppDelegate* app = static_cast<AppDelegate*>(CCApplication::sharedApplication());
 			app->Send(data);
 		}
+	}
+}
+
+
+void TicTacToeGameScene::CheckPlayerMove(rapidjson::Document& data)
+{
+	assert(data["subtype"].IsString());	
+	std::string subtype(data["subtype"].GetString());
+
+	if (subtype == "move")
+	{
+		assert(data["player"].IsInt());	
+		assert(data["row"].IsInt());	
+		assert(data["col"].IsInt());	
+
+		int player = data["player"].GetInt();
+		int row = data["row"].GetInt();
+		int col = data["col"].GetInt();
+
+		assert(row < kCellRows);
+		assert(col < kCellColumns);
+
+		Symbol symbol = (player == 1 ? kSymbolOOO : kSymbolXXX);
+		mBoardLayer->SetSymbol(row, col, symbol);
+
+		mFSM.SetState(kStateSetTurn);
 	}
 }
 
@@ -350,7 +386,6 @@ bool SymbolNode::containsTouchLocation(CCTouch* touch)
 //////////////////////////////////////////////////////////////////////////
 // Board 
 BoardLayer::BoardLayer()
-	: mScene(NULL)
 {
 	for (int row = 0 ; row < kCellRows ; ++row)
 	{
@@ -367,8 +402,7 @@ BoardLayer::~BoardLayer()
 	{
 		for (int col = 0 ; col < kCellColumns ; ++col)
 		{
-			SymbolNode* symbol = mBoard[row][col];
-			symbol->release();
+			mBoard[row][col]->release();
 		}
 	}
 }
@@ -399,11 +433,7 @@ bool BoardLayer::init()
 
 			newSymbol->SetSymbol(kSymbolNone);
 			newSymbol->SetRowCol(row, col);
-			newSymbol->SetScene(mScene);
-			//newSymbol->SetEnabled(false);
-
-			newSymbol->SetEnabled(true);
-
+			newSymbol->SetEnabled(false);
 
 			mBoard[row][col] = newSymbol;
 		}
@@ -436,16 +466,36 @@ void BoardLayer::draw()
 	}
 }
 
+
+void BoardLayer::SetScene(TicTacToeGameScene* scene)
+{
+	for (int row = 0 ; row < kCellRows ; ++row)
+	{
+		for (int col = 0 ; col < kCellColumns ; ++col)
+		{
+			mBoard[row][col]->SetScene(scene);
+		}
+	}
+}
+
+
 void BoardLayer::SetEnabled(bool enabled)
 {
 	for (int row = 0 ; row < kCellRows ; ++row)
 	{
 		for (int col = 0 ; col < kCellColumns ; ++col)
 		{
-			SymbolNode* symbol = mBoard[row][col];
-			symbol->SetEnabled(enabled);
+			mBoard[row][col]->SetEnabled(enabled);
 		}
 	}
+}
+
+void BoardLayer::SetSymbol(int row, int col, Symbol symbol)
+{
+	assert(row >= 0 && row < kCellRows);
+	assert(col >= 0 && col < kCellColumns);
+
+	mBoard[row][col]->SetSymbol(symbol);
 }
 
 

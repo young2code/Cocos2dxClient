@@ -81,15 +81,14 @@ namespace TicTacToe
 		virtual void draw();
 
 		void SetEnabled(bool enabled);
-		void SetScene(TicTacToeGameScene* scene) { mScene = scene; }
+		void SetScene(TicTacToeGameScene* scene);
+		void SetSymbol(int row, int col, Symbol symbol);
 
 	    // implement the "static node()" method manually
 	    CREATE_FUNC(BoardLayer);
 
 	private:
 		SymbolNode* mBoard[kCellRows][kCellColumns];
-
-		TicTacToeGameScene* mScene;
 	};
 
 	class HUDLayer : public cocos2d::CCLayer
@@ -123,7 +122,7 @@ public:
 	// network
 	bool OnRecv(rapidjson::Document& data);
 
-	void OnSymbolTouched(TicTacToe::SymbolNode* symbol);
+	void OnSymbolTouched(const TicTacToe::SymbolNode* symbol);
 
     // implement the "static node()" method manually
     CREATE_FUNC(TicTacToeGameScene);
@@ -157,6 +156,8 @@ private:
 	void OnLeaveGameCanceled(int nNextState);
 
 	void DummyUpdate(){}
+
+	void CheckPlayerMove(rapidjson::Document& data);
 
 private:
 	enum State
