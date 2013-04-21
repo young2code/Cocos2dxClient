@@ -13,6 +13,8 @@ namespace cocos2d
 	class CCLabelTTF;
 }
 
+class TicTacToeGameScene;
+
 namespace TicTacToe
 {
 	enum Symbol
@@ -28,7 +30,7 @@ namespace TicTacToe
 		kCellColumns = 3,
 	};
 
-	class SymbolNode : public cocos2d::CCNode
+	class SymbolNode : public cocos2d::CCNode, public cocos2d::CCTargetedTouchDelegate
 	{
 	public:
 		SymbolNode();
@@ -37,13 +39,36 @@ namespace TicTacToe
 		virtual bool init();  
 		virtual void draw();
 
+		virtual void onEnter();
+		virtual void onExit();
+
+		virtual bool ccTouchBegan(cocos2d::CCTouch* touch, cocos2d::CCEvent* event);
+		virtual void ccTouchMoved(cocos2d::CCTouch* touch, cocos2d::CCEvent* event);
+		virtual void ccTouchEnded(cocos2d::CCTouch* touch, cocos2d::CCEvent* event);
+
+		void SetScene(TicTacToeGameScene* scene) { mScene = scene; }
+
+		void SetRowCol(int row, int col) { mRow = row; mCol = col; }
+		void GetRowCol(int& row, int& col) const { row = mRow; col = mCol; }
+
 		void SetSymbol(Symbol symbol) { mSymbol = symbol; }
+		Symbol GetSymbol() const { return mSymbol; }
+
+		void SetEnabled(bool enabled) { mEnabled = enabled; }
 
 		// implement the "static node()" method manually
 	    CREATE_FUNC(SymbolNode);
 
 	private:
+		bool containsTouchLocation(cocos2d::CCTouch* touch);
+
+	private:
 		Symbol mSymbol;
+		int mRow;
+		int mCol;
+		bool mEnabled;
+
+		TicTacToeGameScene* mScene;
 	};
 
 	class BoardLayer : public cocos2d::CCLayer
@@ -55,11 +80,16 @@ namespace TicTacToe
 		virtual bool init();  
 		virtual void draw();
 
+		void SetEnabled(bool enabled);
+		void SetScene(TicTacToeGameScene* scene) { mScene = scene; }
+
 	    // implement the "static node()" method manually
 	    CREATE_FUNC(BoardLayer);
 
 	private:
 		SymbolNode* mBoard[kCellRows][kCellColumns];
+
+		TicTacToeGameScene* mScene;
 	};
 
 	class HUDLayer : public cocos2d::CCLayer
@@ -92,6 +122,8 @@ public:
 
 	// network
 	bool OnRecv(rapidjson::Document& data);
+
+	void OnSymbolTouched(TicTacToe::SymbolNode* symbol);
 
     // implement the "static node()" method manually
     CREATE_FUNC(TicTacToeGameScene);
