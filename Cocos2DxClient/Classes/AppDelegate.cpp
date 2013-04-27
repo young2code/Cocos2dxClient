@@ -4,6 +4,7 @@
 #include "LoginScene.h"
 #include "LobbyScene.h"
 #include "TicTacToeGameScene.h"
+#include "CheckerGameScene.h"
 #include "CCScheduler.h"
 
 #include "Network.h"
@@ -27,6 +28,7 @@ AppDelegate::AppDelegate()
 	mFSM.RegisterState(kStateLogin, BIND_CALLBACKS(Login));
 	mFSM.RegisterState(kStateLobby, BIND_CALLBACKS(Lobby));
 	mFSM.RegisterState(kStateTicTacToeGame, BIND_CALLBACKS(TicTacToeGame));
+	mFSM.RegisterState(kStateCheckerGame, BIND_CALLBACKS(CheckerGame));
 
 #undef BIND_CALLBACKS
 
@@ -94,7 +96,7 @@ void AppDelegate::ConnectToServer(const char* address, const char* name)
 }
 
 
-void AppDelegate::OnSocketConnect()
+void AppDelegate::OnSocketConnect(PollingSocket*)
 {
 	LOG("AppDelegate::OnSocketConnect()");
 	assert(mFSM.GetState() == kStateLogin);
@@ -102,7 +104,7 @@ void AppDelegate::OnSocketConnect()
 }
 
 
-void AppDelegate::OnSocketRecv(bool hasParseError, rapidjson::Document& data)
+void AppDelegate::OnSocketRecv(PollingSocket*, bool hasParseError, rapidjson::Document& data)
 {
 	if (hasParseError)
 	{
@@ -117,6 +119,7 @@ void AppDelegate::OnSocketRecv(bool hasParseError, rapidjson::Document& data)
 	case kStateLogin:			OnUpdateLogin(data);			break;
 	case kStateLobby:			OnUpdateLobby(data);			break;
 	case kStateTicTacToeGame:	OnUpdateTicTacToeGame(data);	break;
+	case kStateCheckerGame:		OnUpdateCheckerGame(data);		break;
 
 	default:
 		assert(0);
@@ -124,7 +127,7 @@ void AppDelegate::OnSocketRecv(bool hasParseError, rapidjson::Document& data)
 	}
 }
 
-void AppDelegate::OnSocketClose()
+void AppDelegate::OnSocketClose(PollingSocket*)
 {
 	LOG("AppDelegate::OnSocketClose()");
 	ShowMsgBox("Error", "Connection closed.");
@@ -147,6 +150,11 @@ void AppDelegate::GoToTicTacToe()
 	mFSM.SetState(kStateTicTacToeGame);
 }
 
+void AppDelegate::GoToChecker()
+{
+	mFSM.SetState(kStateCheckerGame);
+}
+
 
 void AppDelegate::ShowMsgBox(const char* title, const char* body, ...)
 {
@@ -162,10 +170,10 @@ void AppDelegate::ShowMsgBox(const char* title, const char* body, ...)
 // Login
 void AppDelegate::OnEnterLogin(int prevState)
 {
-	PollingSocket::OnConnectFunc onConnect = boost::bind(&AppDelegate::OnSocketConnect, this);
-	PollingSocket::OnRecvFunc onRecv = boost::bind(&AppDelegate::OnSocketRecv, this, _1, _2);
-	PollingSocket::OnCloseFunc onClose = boost::bind(&AppDelegate::OnSocketClose, this);
-	mSocket.Init(onConnect, onRecv, onClose);
+	PollingSocket::OnConnectFunc onConnect = boost::bind(&AppDelegate::OnSocketConnect, this, _1);
+	PollingSocket::OnRecvFunc onRecv = boost::bind(&AppDelegate::OnSocketRecv, this, _1, _2, _3);
+	PollingSocket::OnCloseFunc onClose = boost::bind(&AppDelegate::OnSocketClose, this, _1);
+	mSocket.InitWait(onConnect, onRecv, onClose);
 
 	mCurScene = LoginScene::create();
 	mCurScene->retain();
@@ -231,4 +239,25 @@ void AppDelegate::OnLeaveTicTacToeGame(int nextState)
 {
 	mCurScene->release();
 	mCurScene = NULL;
+}
+
+
+void AppDelegate::OnEnterCheckerGame(int prevState)
+{
+	mCurScene = CheckerGameScene::create();
+	mCurScene->retain();
+
+	CCDirector::sharedDirector()->replaceScene(mCurScene);
+}
+
+void AppDelegate::OnUpdateCheckerGame(rapidjson::Document& data)
+{
+	static_cast<CheckerGameScene*>(mCurScene)->OnRecv(data);
+}
+
+void AppDelegate::OnLeaveCheckerGame(int nextState)
+{
+	mCurScene->release();
+	mCurScene = NULL;
+
 }

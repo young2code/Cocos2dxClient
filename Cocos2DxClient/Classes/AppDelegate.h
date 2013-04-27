@@ -49,6 +49,7 @@ public:
 
 	void GoToLobby();
 	void GoToTicTacToe();
+	void GoToChecker();
 
 private:
 	// updater. cocos2dx does not provide a global udpate function.
@@ -63,9 +64,9 @@ private:
 	};
 
 	// network
-	void OnSocketConnect();
-	void OnSocketRecv(bool hasParseError, rapidjson::Document& data);
-	void OnSocketClose();
+	void OnSocketConnect(PollingSocket*);
+	void OnSocketRecv(PollingSocket*, bool hasParseError, rapidjson::Document& data);
+	void OnSocketClose(PollingSocket*);
 
 	// fsm
 	void OnEnterLogin(int prevState);
@@ -80,6 +81,10 @@ private:
 	void OnUpdateTicTacToeGame(rapidjson::Document& data);
 	void OnLeaveTicTacToeGame(int nextState);
 
+	void OnEnterCheckerGame(int prevState);
+	void OnUpdateCheckerGame(rapidjson::Document& data);
+	void OnLeaveCheckerGame(int nextState);
+
 	void DummyUpdate() {}
 
 private:
@@ -92,6 +97,7 @@ private:
 		kStateLogin,
 		kStateLobby,
 		kStateTicTacToeGame,
+		kStateCheckerGame,
 	};
 	FSM mFSM;
 

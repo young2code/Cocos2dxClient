@@ -131,6 +131,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Classes\AppDelegate.h" />
+    <ClInclude Include="CheckerGameScene.h" />
     <ClInclude Include="FSM.h" />
     <ClInclude Include="TicTacToeGameScene.h" />
     <ClInclude Include="LobbyScene.h" />
@@ -144,6 +145,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Classes\AppDelegate.cpp" />
+    <ClCompile Include="CheckerGameScene.cpp" />
     <ClCompile Include="FSM.cpp" />
     <ClCompile Include="TicTacToeGameScene.cpp" />
     <ClCompile Include="LobbyScene.cpp" />

@@ -78,10 +78,16 @@ bool LobbyScene::init()
 		CCMenuItemLabel* tictactoeItem = CCMenuItemLabel::create(tictactoeLabel, this, menu_selector(LobbyScene::menuTicTacToeCallback));
 		tictactoeItem->setPositionY(-30);
 
+		// Start Checker
+	    CCLabelTTF* checkerLabel = CCLabelTTF::create("Start Checker", "Arial", 20);
+		CCMenuItemLabel* checkerItem = CCMenuItemLabel::create(checkerLabel, this, menu_selector(LobbyScene::menuCheckerCallback));
+		checkerItem->setPositionY(-60);
+
 		// Menu
         CCMenu* menu = CCMenu::create();
 		menu->addChild(connectItem);
 		menu->addChild(tictactoeItem);
+		menu->addChild(checkerItem);
         menu->setPosition(ccp(size.width/2, size.height/2));
         addChild(menu);
 
@@ -116,6 +122,20 @@ void LobbyScene::menuTicTacToeCallback(CCObject* pSender)
 
 	app->Send(data);
 	app->GoToTicTacToe();
+}
+
+
+void LobbyScene::menuCheckerCallback(CCObject* pSender)
+{
+	AppDelegate* app = static_cast<AppDelegate*>(CCApplication::sharedApplication());
+	
+	rapidjson::Document data;
+	data.SetObject();
+	data.AddMember("type", "service_create", data.GetAllocator());
+	data.AddMember("name", "checker", data.GetAllocator());
+
+	app->Send(data);
+	app->GoToChecker();
 }
 
 
