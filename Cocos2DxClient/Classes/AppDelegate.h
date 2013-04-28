@@ -50,6 +50,7 @@ public:
 	void GoToLobby();
 	void GoToTicTacToe();
 	void GoToChecker();
+	void GoToSnakeCycles();
 
 private:
 	// updater. cocos2dx does not provide a global udpate function.
@@ -85,6 +86,10 @@ private:
 	void OnUpdateCheckerGame(rapidjson::Document& data);
 	void OnLeaveCheckerGame(int nextState);
 
+	void OnEnterSnakeCyclesGame(int prevState);
+	void OnUpdateSnakeCyclesGame(rapidjson::Document& data);
+	void OnLeaveSnakeCyclesGame(int nextState);
+
 	void DummyUpdate() {}
 
 private:
@@ -98,6 +103,7 @@ private:
 		kStateLobby,
 		kStateTicTacToeGame,
 		kStateCheckerGame,
+		kStateSnakeCyclesGame,
 	};
 	FSM mFSM;
 

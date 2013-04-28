@@ -5,6 +5,7 @@
 #include "LobbyScene.h"
 #include "TicTacToeGameScene.h"
 #include "CheckerGameScene.h"
+#include "SnakeCyclesGameScene.h"
 #include "CCScheduler.h"
 
 #include "Network.h"
@@ -29,6 +30,7 @@ AppDelegate::AppDelegate()
 	mFSM.RegisterState(kStateLobby, BIND_CALLBACKS(Lobby));
 	mFSM.RegisterState(kStateTicTacToeGame, BIND_CALLBACKS(TicTacToeGame));
 	mFSM.RegisterState(kStateCheckerGame, BIND_CALLBACKS(CheckerGame));
+	mFSM.RegisterState(kStateSnakeCyclesGame, BIND_CALLBACKS(SnakeCyclesGame));
 
 #undef BIND_CALLBACKS
 
@@ -120,6 +122,7 @@ void AppDelegate::OnSocketRecv(PollingSocket*, bool hasParseError, rapidjson::Do
 	case kStateLobby:			OnUpdateLobby(data);			break;
 	case kStateTicTacToeGame:	OnUpdateTicTacToeGame(data);	break;
 	case kStateCheckerGame:		OnUpdateCheckerGame(data);		break;
+	case kStateSnakeCyclesGame: OnUpdateSnakeCyclesGame(data);	break;
 
 	default:
 		assert(0);
@@ -153,6 +156,11 @@ void AppDelegate::GoToTicTacToe()
 void AppDelegate::GoToChecker()
 {
 	mFSM.SetState(kStateCheckerGame);
+}
+
+void AppDelegate::GoToSnakeCycles()
+{
+	mFSM.SetState(kStateSnakeCyclesGame);
 }
 
 
@@ -261,3 +269,25 @@ void AppDelegate::OnLeaveCheckerGame(int nextState)
 	mCurScene = NULL;
 
 }
+
+
+
+void AppDelegate::OnEnterSnakeCyclesGame(int prevState)
+{
+	mCurScene = SnakeCyclesGameScene::create();
+	mCurScene->retain();
+
+	CCDirector::sharedDirector()->replaceScene(mCurScene);
+}
+
+void AppDelegate::OnUpdateSnakeCyclesGame(rapidjson::Document& data)
+{
+	static_cast<SnakeCyclesGameScene*>(mCurScene)->OnRecv(data);
+}
+
+void AppDelegate::OnLeaveSnakeCyclesGame(int nextState)
+{
+	mCurScene->release();
+	mCurScene = NULL;
+}
+

@@ -24,6 +24,7 @@ public:
     void menuEchoCallback(CCObject* pSender);
     void menuTicTacToeCallback(CCObject* pSender);
     void menuCheckerCallback(CCObject* pSender);
+    void menuSnakeCyclesCallback(CCObject* pSender);
 
 	// network
 	bool OnRecv(rapidjson::Document& data);

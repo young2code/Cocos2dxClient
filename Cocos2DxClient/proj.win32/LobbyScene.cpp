@@ -83,11 +83,17 @@ bool LobbyScene::init()
 		CCMenuItemLabel* checkerItem = CCMenuItemLabel::create(checkerLabel, this, menu_selector(LobbyScene::menuCheckerCallback));
 		checkerItem->setPositionY(-60);
 
+		// Start SnakeCycles
+	    CCLabelTTF* snakeLabel = CCLabelTTF::create("Start SnakeCycles", "Arial", 20);
+		CCMenuItemLabel* snakeItem = CCMenuItemLabel::create(snakeLabel, this, menu_selector(LobbyScene::menuSnakeCyclesCallback));
+		snakeItem->setPositionY(-90);
+
 		// Menu
         CCMenu* menu = CCMenu::create();
 		menu->addChild(connectItem);
 		menu->addChild(tictactoeItem);
 		menu->addChild(checkerItem);
+		menu->addChild(snakeItem);
         menu->setPosition(ccp(size.width/2, size.height/2));
         addChild(menu);
 
@@ -136,6 +142,20 @@ void LobbyScene::menuCheckerCallback(CCObject* pSender)
 
 	app->Send(data);
 	app->GoToChecker();
+}
+
+
+void LobbyScene::menuSnakeCyclesCallback(CCObject* pSender)
+{
+	AppDelegate* app = static_cast<AppDelegate*>(CCApplication::sharedApplication());
+	
+	rapidjson::Document data;
+	data.SetObject();
+	data.AddMember("type", "service_create", data.GetAllocator());
+	data.AddMember("name", "snakecycles", data.GetAllocator());
+
+	app->Send(data);
+	app->GoToSnakeCycles();
 }
 
 

@@ -86,11 +86,11 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.;..\Classes;..\cocos2dx\include;..\cocos2dx\include\include;..\cocos2dx\include\kazmath\include;..\cocos2dx\include\platform\win32;..\cocos2dx\include\platform\third_party\win32;..\cocos2dx\include\platform\third_party\win32\OGLES;C:\Users\young\Documents\Projects\Blizzard Projects\boost_1_53_0\boost_1_53_0;C:\Users\young\Documents\Projects\Blizzard Projects\rapidjson-0.11\rapidjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\Classes;..\cocos2dx\include;..\cocos2dx\include\include;..\cocos2dx\include\kazmath\include;..\cocos2dx\include\platform\win32;..\cocos2dx\include\platform\third_party\win32;..\cocos2dx\include\platform\third_party\win32\OGLES;..\cocos2dx\extensions;C:\Users\young\Documents\Projects\Blizzard Projects\boost_1_53_0\boost_1_53_0;C:\Users\young\Documents\Projects\Blizzard Projects\rapidjson-0.11\rapidjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <ExceptionHandling />
+      <ExceptionHandling>Sync</ExceptionHandling>
       <DebugInformationFormat />
       <PreprocessorDefinitions>WIN32;_WINDOWS;STRICT;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGSNDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4267;4251;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -100,7 +100,7 @@
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalLibraryDirectories>$(OutDir);..\cocos2dx\lib\$(Configuration).$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcocos2d.lib;opengl32.lib;glew32.lib;ws2_32.lib;mswsock.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libcocos2d.lib;libExtensions.lib;opengl32.lib;glew32.lib;ws2_32.lib;mswsock.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <Culture>0x0409</Culture>
@@ -133,6 +133,7 @@
     <ClInclude Include="..\Classes\AppDelegate.h" />
     <ClInclude Include="CheckerGameScene.h" />
     <ClInclude Include="FSM.h" />
+    <ClInclude Include="SnakeCyclesGameScene.h" />
     <ClInclude Include="TicTacToeGameScene.h" />
     <ClInclude Include="LobbyScene.h" />
     <ClInclude Include="Log.h" />
@@ -147,6 +148,7 @@
     <ClCompile Include="..\Classes\AppDelegate.cpp" />
     <ClCompile Include="CheckerGameScene.cpp" />
     <ClCompile Include="FSM.cpp" />
+    <ClCompile Include="SnakeCyclesGameScene.cpp" />
     <ClCompile Include="TicTacToeGameScene.cpp" />
     <ClCompile Include="LobbyScene.cpp" />
     <ClCompile Include="Log.cpp" />
