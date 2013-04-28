@@ -30,9 +30,12 @@ AppDelegate::AppDelegate()
 	mFSM.RegisterState(kStateLobby, BIND_CALLBACKS(Lobby));
 	mFSM.RegisterState(kStateTicTacToeGame, BIND_CALLBACKS(TicTacToeGame));
 	mFSM.RegisterState(kStateCheckerGame, BIND_CALLBACKS(CheckerGame));
-	mFSM.RegisterState(kStateSnakeCyclesGame, BIND_CALLBACKS(SnakeCyclesGame));
 
 #undef BIND_CALLBACKS
+
+	mFSM.RegisterState(kStateSnakeCyclesGame, boost::bind(&AppDelegate::OnEnterSnakeCyclesGame, this, _1),
+											  boost::bind(&AppDelegate::OnUpdateSnakeCyclesGame, this),
+											  boost::bind(&AppDelegate::OnLeaveSnakeCyclesGame, this, _1));
 
 }
 
@@ -118,11 +121,11 @@ void AppDelegate::OnSocketRecv(PollingSocket*, bool hasParseError, rapidjson::Do
 	CCDirector* director = CCDirector::sharedDirector();
 	switch (mFSM.GetState())
 	{
-	case kStateLogin:			OnUpdateLogin(data);			break;
-	case kStateLobby:			OnUpdateLobby(data);			break;
-	case kStateTicTacToeGame:	OnUpdateTicTacToeGame(data);	break;
-	case kStateCheckerGame:		OnUpdateCheckerGame(data);		break;
-	case kStateSnakeCyclesGame: OnUpdateSnakeCyclesGame(data);	break;
+	case kStateLogin:			OnRecvLogin(data);				break;
+	case kStateLobby:			OnRecvLobby(data);				break;
+	case kStateTicTacToeGame:	OnRecvTicTacToeGame(data);		break;
+	case kStateCheckerGame:		OnRecvCheckerGame(data);		break;
+	case kStateSnakeCyclesGame: OnRecvSnakeCyclesGame(data);	break;
 
 	default:
 		assert(0);
@@ -197,7 +200,7 @@ void AppDelegate::OnEnterLogin(int prevState)
 	}
 }
 
-void AppDelegate::OnUpdateLogin(rapidjson::Document& data)
+void AppDelegate::OnRecvLogin(rapidjson::Document& data)
 {
 	// wait for conneciton is complete.
 }
@@ -217,7 +220,7 @@ void AppDelegate::OnEnterLobby(int prevState)
 	CCDirector::sharedDirector()->replaceScene(mCurScene);
 }
 
-void AppDelegate::OnUpdateLobby(rapidjson::Document& data)
+void AppDelegate::OnRecvLobby(rapidjson::Document& data)
 {
 	static_cast<LobbyScene*>(mCurScene)->OnRecv(data);
 }
@@ -238,7 +241,7 @@ void AppDelegate::OnEnterTicTacToeGame(int prevState)
 	CCDirector::sharedDirector()->replaceScene(mCurScene);
 }
 
-void AppDelegate::OnUpdateTicTacToeGame(rapidjson::Document& data)
+void AppDelegate::OnRecvTicTacToeGame(rapidjson::Document& data)
 {
 	static_cast<TicTacToeGameScene*>(mCurScene)->OnRecv(data);
 }
@@ -258,7 +261,7 @@ void AppDelegate::OnEnterCheckerGame(int prevState)
 	CCDirector::sharedDirector()->replaceScene(mCurScene);
 }
 
-void AppDelegate::OnUpdateCheckerGame(rapidjson::Document& data)
+void AppDelegate::OnRecvCheckerGame(rapidjson::Document& data)
 {
 	static_cast<CheckerGameScene*>(mCurScene)->OnRecv(data);
 }
@@ -280,9 +283,14 @@ void AppDelegate::OnEnterSnakeCyclesGame(int prevState)
 	CCDirector::sharedDirector()->replaceScene(mCurScene);
 }
 
-void AppDelegate::OnUpdateSnakeCyclesGame(rapidjson::Document& data)
+void AppDelegate::OnRecvSnakeCyclesGame(rapidjson::Document& data)
 {
 	static_cast<SnakeCyclesGameScene*>(mCurScene)->OnRecv(data);
+}
+
+void AppDelegate::OnUpdateSnakeCyclesGame()
+{
+	static_cast<SnakeCyclesGameScene*>(mCurScene)->Update();
 }
 
 void AppDelegate::OnLeaveSnakeCyclesGame(int nextState)

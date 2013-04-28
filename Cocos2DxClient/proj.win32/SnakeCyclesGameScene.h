@@ -111,42 +111,6 @@ namespace SnakeCycles
 
 class SnakeCyclesGameScene : public cocos2d::CCScene
 {
-public:
-	SnakeCyclesGameScene();
-	virtual ~SnakeCyclesGameScene();
-
-    virtual bool init();  
-
-    void menuEchoCallback(CCObject* pSender);
-
-	void OnRecv(rapidjson::Document& data);
-
-    // implement the "static node()" method manually
-    CREATE_FUNC(SnakeCyclesGameScene);
-
-private:
-	void InitFSM();
-	void ShutdownFSM();
-
-	void OnEnterWait(int nPrevState);
-	void OnUpdateWait(rapidjson::Document& data);
-	void OnLeaveWait(int nNextState);
-
-	void OnEnterPlay(int nPrevState);
-	void OnUpdatePlay(rapidjson::Document& data);
-	void OnLeavePlay(int nNextState);
-
-	void OnEnterEnd(int nPrevState);
-	void OnUpdateEnd(rapidjson::Document& data);
-	void OnLeaveEnd(int nNextState);
-
-	void DummyUpdate(){}
-
-	void UpdatePlayer(rapidjson::Value& player);
-	void UpdateSymbol(rapidjson::Value& wall);
-
-	bool CheckWinner(rapidjson::Document& data);
-
 private:
 	enum State
 	{
@@ -171,15 +135,61 @@ private:
 		kPlayerDead,
 	};
 
-	struct Player
+	enum Direction
 	{
-		std::string name;
+		kUP = 0,
+		kDOWN,
+		kLEFT,
+		kRIGHT,
 	};
 
+public:
+	SnakeCyclesGameScene();
+	virtual ~SnakeCyclesGameScene();
+
+    virtual bool init();  
+
+    void menuEchoCallback(CCObject* pSender);
+
+	void OnRecv(rapidjson::Document& data);
+
+	void Update();
+
+    // implement the "static node()" method manually
+    CREATE_FUNC(SnakeCyclesGameScene);
+
+private:
+	void InitFSM();
+	void ShutdownFSM();
+
+	void OnEnterWait(int nPrevState);
+	void OnRecvWait(rapidjson::Document& data);
+	void OnLeaveWait(int nNextState);
+
+	void OnEnterPlay(int nPrevState);
+	void OnRecvPlay(rapidjson::Document& data);
+	void OnUpdatePlay();
+	void OnLeavePlay(int nNextState);
+
+	void OnEnterEnd(int nPrevState);
+	void OnRecvEnd(rapidjson::Document& data);
+	void OnLeaveEnd(int nNextState);
+
+	void DummyUpdate(){}
+
+	void UpdatePlayer(rapidjson::Value& player);
+	void UpdateSymbol(rapidjson::Value& wall);
+
+	void SendDirection(Direction dir);
+
+	bool CheckWinner(rapidjson::Document& data);
+
+private:
 	FSM mFSM;
 
-	Player mPlayers[kPlayerNone];
 	PlayerIndex mMyIndex;
+	PlayerState mMyState;
+	Direction mMyDirection;
 	PlayerIndex mWinnerIndex;
 
 	SnakeCycles::BoardLayer* mBoardLayer;

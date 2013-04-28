@@ -10,6 +10,8 @@ using namespace SnakeCycles;
 SnakeCyclesGameScene::SnakeCyclesGameScene()
 	: mMyIndex(kPlayerNone)
 	, mWinnerIndex(kPlayerNone)
+	, mMyDirection(kUP)
+	, mMyState(kPlayerDead)
 	, mBoardLayer(NULL)
 	, mHUDLayer(NULL)
 {
@@ -77,10 +79,14 @@ void SnakeCyclesGameScene::InitFSM()
 							  boost::bind(&SnakeCyclesGameScene::OnLeave##State, this, _1)
 
 	mFSM.RegisterState(kStateWait, BIND_CALLBACKS(Wait));
-	mFSM.RegisterState(kStatePlay, BIND_CALLBACKS(Play));
 	mFSM.RegisterState(kStateEnd, BIND_CALLBACKS(End));
 
 #undef BIND_CALLBACKS
+
+	mFSM.RegisterState(kStatePlay, boost::bind(&SnakeCyclesGameScene::OnEnterPlay, this, _1),
+								   boost::bind(&SnakeCyclesGameScene::OnUpdatePlay, this),
+								   boost::bind(&SnakeCyclesGameScene::OnLeavePlay, this, _1));
+
 }
 
 
@@ -103,15 +109,21 @@ void SnakeCyclesGameScene::OnRecv(rapidjson::Document& data)
 
 		switch(mFSM.GetState())
 		{
-		case kStateWait:	OnUpdateWait(data);		break;
-		case kStatePlay:	OnUpdatePlay(data);		break;
-		case kStateEnd:		OnUpdateEnd(data);		break;
+		case kStateWait:	OnRecvWait(data);		break;
+		case kStatePlay:	OnRecvPlay(data);		break;
+		case kStateEnd:		OnRecvEnd(data);		break;
 
 		default:
 			assert(0);
 			return;
 		}
 	}
+}
+
+
+void SnakeCyclesGameScene::Update()
+{
+	mFSM.Update();
 }
 
 
@@ -157,6 +169,12 @@ void SnakeCyclesGameScene::UpdatePlayer(rapidjson::Value& player)
 	{
 		mBoardLayer->ResetSymbols(color);
 	}
+
+	if (index == mMyIndex)
+	{
+		mMyDirection = static_cast<Direction>(dir);
+		mMyState = state;
+	}
 }
 
 void SnakeCyclesGameScene::UpdateSymbol(rapidjson::Value& wall)
@@ -174,6 +192,21 @@ void SnakeCyclesGameScene::UpdateSymbol(rapidjson::Value& wall)
 	mBoardLayer->SetSymbol(row, col, kSymbolWall, color);
 }
 
+
+void SnakeCyclesGameScene::SendDirection(SnakeCyclesGameScene::Direction dir)
+{
+	AppDelegate* app = static_cast<AppDelegate*>(CCApplication::sharedApplication());
+
+	rapidjson::Document data;
+	data.SetObject();
+	data.AddMember("type", "snakecycles", data.GetAllocator());
+	data.AddMember("subtype", "dir", data.GetAllocator());
+	data.AddMember("dir", static_cast<int>(dir), data.GetAllocator());
+
+	app->Send(data);
+}
+
+
 // Wait
 void SnakeCyclesGameScene::OnEnterWait(int nPrevState)
 {
@@ -181,7 +214,7 @@ void SnakeCyclesGameScene::OnEnterWait(int nPrevState)
 	mHUDLayer->SetTitle("Wait for other players..");
 }
 
-void SnakeCyclesGameScene::OnUpdateWait(rapidjson::Document& data)
+void SnakeCyclesGameScene::OnRecvWait(rapidjson::Document& data)
 {
 	assert(data["subtype"].IsString());	
 	std::string subtype(data["subtype"].GetString());
@@ -203,7 +236,7 @@ void SnakeCyclesGameScene::OnUpdateWait(rapidjson::Document& data)
 
 		assert(data["players"].IsArray());
 		rapidjson::Value& players = data["players"];
-		for (int i = 0 ; i < players.Size() ; ++i)
+		for (size_t i = 0 ; i < players.Size() ; ++i)
 		{
 			assert(players[i].IsObject());
 			UpdatePlayer(players[i]);
@@ -226,7 +259,7 @@ void SnakeCyclesGameScene::OnEnterPlay(int nPrevState)
 	mHUDLayer->SetTitle("Play!");
 }
 
-void SnakeCyclesGameScene::OnUpdatePlay(rapidjson::Document& data)
+void SnakeCyclesGameScene::OnRecvPlay(rapidjson::Document& data)
 {
 	assert(data["subtype"].IsString());	
 	std::string subtype(data["subtype"].GetString());
@@ -235,7 +268,7 @@ void SnakeCyclesGameScene::OnUpdatePlay(rapidjson::Document& data)
 	{
 		assert(data["walls"].IsArray());
 		rapidjson::Value& walls = data["walls"];
-		for (int i = 0 ; i < walls.Size() ; ++i)
+		for (size_t i = 0 ; i < walls.Size() ; ++i)
 		{
 			assert(walls[i].IsObject());
 			UpdateSymbol(walls[i]);
@@ -243,11 +276,35 @@ void SnakeCyclesGameScene::OnUpdatePlay(rapidjson::Document& data)
 
 		assert(data["players"].IsArray());
 		rapidjson::Value& players = data["players"];
-		for (int i = 0 ; i < players.Size() ; ++i)
+		for (size_t i = 0 ; i < players.Size() ; ++i)
 		{
 			assert(players[i].IsObject());
 			UpdatePlayer(players[i]);
 		}
+	}
+}
+
+void SnakeCyclesGameScene::OnUpdatePlay()
+{
+	if (GetAsyncKeyState(VK_LEFT) && mMyDirection != kLEFT)
+	{
+		SendDirection(kLEFT);
+		return;
+	}
+	if (GetAsyncKeyState(VK_UP) && mMyDirection != kUP)
+	{
+		SendDirection(kUP);
+		return;
+	}
+	if (GetAsyncKeyState(VK_RIGHT) && mMyDirection != kRIGHT)
+	{
+		SendDirection(kRIGHT);
+		return;
+	}
+	if (GetAsyncKeyState(VK_DOWN) && mMyDirection != kDOWN)
+	{
+		SendDirection(kDOWN);
+		return;
 	}
 }
 
@@ -272,7 +329,7 @@ void SnakeCyclesGameScene::OnEnterEnd(int nPrevState)
 	}
 }
 
-void SnakeCyclesGameScene::OnUpdateEnd(rapidjson::Document& data)
+void SnakeCyclesGameScene::OnRecvEnd(rapidjson::Document& data)
 {
 	assert(data["subtype"].IsString());	
 	std::string subtype(data["subtype"].GetString());

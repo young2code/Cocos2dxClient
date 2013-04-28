@@ -71,23 +71,24 @@ private:
 
 	// fsm
 	void OnEnterLogin(int prevState);
-	void OnUpdateLogin(rapidjson::Document& data);
+	void OnRecvLogin(rapidjson::Document& data);
 	void OnLeaveLogin(int nextState);
 
 	void OnEnterLobby(int prevState);
-	void OnUpdateLobby(rapidjson::Document& data);
+	void OnRecvLobby(rapidjson::Document& data);
 	void OnLeaveLobby(int nextState);
 
 	void OnEnterTicTacToeGame(int prevState);
-	void OnUpdateTicTacToeGame(rapidjson::Document& data);
+	void OnRecvTicTacToeGame(rapidjson::Document& data);
 	void OnLeaveTicTacToeGame(int nextState);
 
 	void OnEnterCheckerGame(int prevState);
-	void OnUpdateCheckerGame(rapidjson::Document& data);
+	void OnRecvCheckerGame(rapidjson::Document& data);
 	void OnLeaveCheckerGame(int nextState);
 
 	void OnEnterSnakeCyclesGame(int prevState);
-	void OnUpdateSnakeCyclesGame(rapidjson::Document& data);
+	void OnRecvSnakeCyclesGame(rapidjson::Document& data);
+	void OnUpdateSnakeCyclesGame();
 	void OnLeaveSnakeCyclesGame(int nextState);
 
 	void DummyUpdate() {}
