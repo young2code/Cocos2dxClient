@@ -8,8 +8,8 @@ using namespace SnakeCycles;
 
 
 SnakeCyclesGameScene::SnakeCyclesGameScene()
-	: mMyIndex(kPlayerMax)
-	, mWinnerIndex(kPlayerMax)
+	: mMyIndex(kPlayerNone)
+	, mWinnerIndex(kPlayerNone)
 	, mBoardLayer(NULL)
 	, mHUDLayer(NULL)
 {
@@ -133,6 +133,47 @@ bool SnakeCyclesGameScene::CheckWinner(rapidjson::Document& data)
 }
 
 
+void SnakeCyclesGameScene::UpdatePlayer(rapidjson::Value& player)
+{
+	assert(player["index"].IsInt());
+	assert(player["x"].IsInt());
+	assert(player["y"].IsInt());
+	assert(player["dir"].IsInt());
+	assert(player["state"].IsInt());
+
+	PlayerIndex index = static_cast<PlayerIndex>(player["index"].GetInt());
+	int row = player["y"].GetInt();
+	int col = player["x"].GetInt();
+	int dir = player["dir"].GetInt();
+	PlayerState state = static_cast<PlayerState>(player["state"].GetInt());
+
+	Color color = static_cast<Color>(index);
+
+	if (state == kPlayerAlive)
+	{
+		mBoardLayer->SetSymbol(row, col, kSymbolHead, color);
+	}
+	else
+	{
+		mBoardLayer->ResetSymbols(color);
+	}
+}
+
+void SnakeCyclesGameScene::UpdateSymbol(rapidjson::Value& wall)
+{
+	assert(wall["playerIndex"].IsInt());
+	assert(wall["x"].IsInt());
+	assert(wall["y"].IsInt());
+
+	PlayerIndex index = static_cast<PlayerIndex>(wall["playerIndex"].GetInt());
+	int row = wall["y"].GetInt();
+	int col = wall["x"].GetInt();
+
+	Color color = static_cast<Color>(index);
+
+	mBoardLayer->SetSymbol(row, col, kSymbolWall, color);
+}
+
 // Wait
 void SnakeCyclesGameScene::OnEnterWait(int nPrevState)
 {
@@ -151,9 +192,22 @@ void SnakeCyclesGameScene::OnUpdateWait(rapidjson::Document& data)
 		int number = data["number"].GetInt();
 		mHUDLayer->SetTitle("Countdown : %d", number);
 	}
+	else if(subtype == "playerindex")
+	{
+		assert(data["playerindex"].IsInt());	
+		mMyIndex = static_cast<PlayerIndex>(data["playerindex"].GetInt());
+	}
 	else if(subtype == "play")
 	{
-		// Init game data here..
+		mBoardLayer->ResetSymbols(kColorNone);
+
+		assert(data["players"].IsArray());
+		rapidjson::Value& players = data["players"];
+		for (int i = 0 ; i < players.Size() ; ++i)
+		{
+			assert(players[i].IsObject());
+			UpdatePlayer(players[i]);
+		}
 
 		mFSM.SetState(kStatePlay);
 	}
@@ -174,6 +228,27 @@ void SnakeCyclesGameScene::OnEnterPlay(int nPrevState)
 
 void SnakeCyclesGameScene::OnUpdatePlay(rapidjson::Document& data)
 {
+	assert(data["subtype"].IsString());	
+	std::string subtype(data["subtype"].GetString());
+
+	if (subtype == "move")
+	{
+		assert(data["walls"].IsArray());
+		rapidjson::Value& walls = data["walls"];
+		for (int i = 0 ; i < walls.Size() ; ++i)
+		{
+			assert(walls[i].IsObject());
+			UpdateSymbol(walls[i]);
+		}
+
+		assert(data["players"].IsArray());
+		rapidjson::Value& players = data["players"];
+		for (int i = 0 ; i < players.Size() ; ++i)
+		{
+			assert(players[i].IsObject());
+			UpdatePlayer(players[i]);
+		}
+	}
 }
 
 void SnakeCyclesGameScene::OnLeavePlay(int nNextState)
@@ -187,7 +262,7 @@ void SnakeCyclesGameScene::OnEnterEnd(int nPrevState)
 {
 	LOG("SnakeCyclesGameScene::OnEnterEnd()");
 
-	if (mWinnerIndex != kPlayerMax)
+	if (mWinnerIndex != kPlayerNone)
 	{
 		mHUDLayer->SetTitle("Winner : %d", mWinnerIndex);
 	}
@@ -220,7 +295,7 @@ void SnakeCyclesGameScene::OnLeaveEnd(int nNextState)
 // Board 
 SymbolNode::SymbolNode()
 	: mSymbol(kSymbolNone)
-	, mColor(kNone)
+	, mColor(kColorNone)
 	, mRow(0)
 	, mCol(0)
 	, mScene(NULL)
@@ -244,12 +319,12 @@ void SymbolNode::draw()
 
 	switch(mColor)
 	{
-	case kRed:		ccDrawColor4F(1.0f, 0.0f, 0.0f, 1.0f); break;
-	case kBlue:		ccDrawColor4F(0.0f, 0.0f, 1.0f, 1.0f); break;
-	case kGreen:	ccDrawColor4F(0.0f, 1.0f, 0.0f, 1.0f); break;
-	case kWhite:	ccDrawColor4F(1.0f, 1.0f, 1.0f, 1.0f); break;
+	case kColorRed:		ccDrawColor4F(1.0f, 0.0f, 0.0f, 1.0f); break;
+	case kColorBlue:	ccDrawColor4F(0.0f, 0.0f, 1.0f, 1.0f); break;
+	case kColorGreen:	ccDrawColor4F(0.0f, 1.0f, 0.0f, 1.0f); break;
+	case kColorWhite:	ccDrawColor4F(1.0f, 1.0f, 1.0f, 1.0f); break;
 
-	case kNone:
+	case kColorNone:
 		break;
 
 	default:
@@ -314,8 +389,7 @@ bool BoardLayer::init()
 	float horzOffset = size.height / kCellRows;
 
 
-	int rowReal = 0; 
-	for (int rowPos = kCellRows-1 ; rowPos >= 0 ; --rowPos)
+	for (int row = 0 ; row < kCellRows ; ++row)
 	{
 		for (int col = 0 ; col < kCellColumns ; ++col)
 		{
@@ -324,15 +398,14 @@ bool BoardLayer::init()
 			newSymbol->setScale(scale);
 			newSymbol->setAnchorPoint(ccp(0.5f, 0.5f));
 			newSymbol->setContentSize(CCSize(vertOffset, horzOffset));
-			newSymbol->setPosition(col*vertOffset + vertOffset/2.0f, rowPos*horzOffset + horzOffset/2.0f);
+			newSymbol->setPosition(col*vertOffset + vertOffset/2.0f, row*horzOffset + horzOffset/2.0f);
 			addChild(newSymbol);
 
 			newSymbol->SetSymbol(kSymbolNone);
-			newSymbol->SetRowCol(rowReal, col);
+			newSymbol->SetRowCol(row, col);
 
-			mBoard[rowReal][col] = newSymbol;
+			mBoard[row][col] = newSymbol;
 		}
-		++rowReal;
 	}
 
 	setScale(scale);
@@ -348,7 +421,7 @@ void BoardLayer::draw()
 	float vertOffset = size.width / kCellColumns;
 	float horzOffset = size.height / kCellRows;
 
-    ccDrawColor4F(1.0f, 0.0f, 0.5f, 1.0f);
+    ccDrawColor4F(0.5f, 0.5f, 0.5f, 1.0f);
 	for (int row = 0 ; row <= kCellRows ; ++row)
 	{
 		float y = row * horzOffset;
@@ -375,12 +448,29 @@ void BoardLayer::SetScene(SnakeCyclesGameScene* scene)
 }
 
 
-void BoardLayer::SetSymbol(int row, int col, Symbol symbol)
+void BoardLayer::SetSymbol(int row, int col, Symbol symbol, Color color)
 {
 	assert(row >= 0 && row < kCellRows);
 	assert(col >= 0 && col < kCellColumns);
 
 	mBoard[row][col]->SetSymbol(symbol);
+	mBoard[row][col]->SetColor(color);
+}
+
+
+void BoardLayer::ResetSymbols(Color color)
+{
+	for (int row = 0 ; row < kCellRows ; ++row)
+	{
+		for (int col = 0 ; col < kCellColumns ; ++col)
+		{
+			if (kColorNone == color|| mBoard[row][col]->GetColor() == color)
+			{
+				mBoard[row][col]->SetSymbol(kSymbolNone);
+				mBoard[row][col]->SetColor(kColorNone);
+			}
+		}
+	}
 }
 
 

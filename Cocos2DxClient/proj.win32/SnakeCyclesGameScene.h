@@ -13,6 +13,12 @@ class SnakeCyclesGameScene;
 
 namespace SnakeCycles
 {
+	enum
+	{
+		kCellRows = 20,
+		kCellColumns = 20,
+	};
+
 	enum Symbol
 	{
 		kSymbolNone = 0, 
@@ -20,20 +26,14 @@ namespace SnakeCycles
 		kSymbolWall, 
 	};
 		
-	enum
-	{
-		kCellRows = 50,
-		kCellColumns = 50,
-	};
-
 	enum Color
 	{	
-		kRed = 0,	// kPlayer1
-		kBlue,		// kPlayer2
-		kGreen,		// kPlayer3
-		kWhite,		// kPlayer4
+		kColorRed = 0,		// kPlayer1
+		kColorBlue,			// kPlayer2
+		kColorGreen,		// kPlayer3
+		kColorWhite,		// kPlayer4
 
-		kNone,
+		kColorNone,
 	};
 
 	class SymbolNode : public cocos2d::CCNode
@@ -54,6 +54,7 @@ namespace SnakeCycles
 		Symbol GetSymbol() const { return mSymbol; }
 
 		void SetColor(Color color) { mColor = color; }
+		Color GetColor() const { return mColor; }
 
 		// implement the "static node()" method manually
 	    CREATE_FUNC(SymbolNode);
@@ -80,7 +81,8 @@ namespace SnakeCycles
 		virtual void draw();
 
 		void SetScene(SnakeCyclesGameScene* scene);
-		void SetSymbol(int row, int col, Symbol symbol);
+		void SetSymbol(int row, int col, Symbol symbol, Color color);
+		void ResetSymbols(Color color);
 
 	    // implement the "static node()" method manually
 	    CREATE_FUNC(BoardLayer);
@@ -119,8 +121,6 @@ public:
 
 	void OnRecv(rapidjson::Document& data);
 
-	void OnSymbolTouched(const SnakeCycles::SymbolNode* symbol);
-
     // implement the "static node()" method manually
     CREATE_FUNC(SnakeCyclesGameScene);
 
@@ -142,6 +142,9 @@ private:
 
 	void DummyUpdate(){}
 
+	void UpdatePlayer(rapidjson::Value& player);
+	void UpdateSymbol(rapidjson::Value& wall);
+
 	bool CheckWinner(rapidjson::Document& data);
 
 private:
@@ -159,7 +162,13 @@ private:
 		kPlayer3,
 		kPlayer4,
 
-		kPlayerMax,
+		kPlayerNone,
+	};
+
+	enum PlayerState
+	{
+		kPlayerAlive = 0,
+		kPlayerDead,
 	};
 
 	struct Player
@@ -169,7 +178,7 @@ private:
 
 	FSM mFSM;
 
-	Player mPlayers[kPlayerMax];
+	Player mPlayers[kPlayerNone];
 	PlayerIndex mMyIndex;
 	PlayerIndex mWinnerIndex;
 
